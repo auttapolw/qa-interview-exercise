@@ -1,0 +1,886 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>QA Interview Exercise — VASUP Line Ticket Vending Machine</title>
+  <style>
+    :root {
+      --ink: #241608;
+      --muted: #7a6a5c;
+      --line: #ecd9c2;
+      --soft-line: #f6ead9;
+      --paper: #ffffff;
+      --wash: #fdf6ec;
+      --deep: #48270f;
+      --deep-2: #67381c;
+      --mint: #fce9d2;
+      --mint-2: #fff6ea;
+      --accent: #fa940c;
+      --accent-soft: #fff1de;
+      --danger: #e01119;
+      --danger-soft: #fdecec;
+      --success: #20764e;
+      --success-soft: #eaf7ef;
+      --focus: #c8760a;
+      --shadow: 0 14px 34px rgba(72, 39, 15, .08);
+      --radius: 14px;
+      --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --serif: Iowan Old Style, Palatino Linotype, Georgia, serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--wash);
+      font: 15px/1.5 var(--sans);
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+
+    .topbar {
+      min-height: 92px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 12px clamp(18px, 4vw, 64px);
+      color: #fff6ea;
+      background: linear-gradient(135deg, var(--deep) 0%, #341b09 100%);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .hazard-stripe {
+      height: 7px;
+      background: repeating-linear-gradient(-45deg, var(--accent) 0 16px, var(--deep-2) 16px 32px);
+      position: sticky; top: 92px; z-index: 19;
+    }
+    .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .brand-mark {
+      width: 68px; height: 68px; border-radius: 16px; flex: none;
+      overflow: hidden; box-shadow: 0 0 0 2.5px #fff6ea, 0 0 0 4px rgba(0,0,0,.15), 0 10px 20px rgba(0,0,0,.4);
+    }
+    .brand-mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .brand-title { font-weight: 800; letter-spacing: -.01em; font-size: 17px; }
+    .brand-sub { color: #d9b78e; font-size: 12px; letter-spacing: .03em; }
+    .shell { width: min(1240px, calc(100% - 32px)); margin: 28px auto 70px; }
+    .intro { margin-bottom: 30px; }
+    .eyebrow {
+      display: inline-block; margin: 0 0 9px; color: var(--deep-2); text-transform: uppercase;
+      font-size: 11px; font-weight: 800; letter-spacing: .1em;
+      padding: 4px 11px; border-radius: 999px; background: var(--accent-soft);
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      margin-bottom: 8px; font: 700 clamp(30px, 4vw, 50px)/1.05 var(--serif);
+      letter-spacing: -.03em; color: var(--deep);
+    }
+    .intro-copy { margin: 0; max-width: 720px; color: var(--muted); font-size: 16px; }
+
+    .tester-row { margin-top: 18px; max-width: 320px; }
+    .tester-row label { display: block; margin-bottom: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+    .tester-row input { width: 100%; }
+    .timer-bar {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+      margin-top: 22px; padding-top: 18px; border-top: 2px dashed var(--line); max-width: 640px;
+    }
+    .timer { display: flex; align-items: center; gap: 10px; }
+    .timer-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+    .timer.running .timer-dot { animation: pulse 1.4s infinite; }
+    @keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(250,148,12,.25); } }
+    .timer-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .09em; font-weight: 800; }
+    .timer strong { font: 700 32px/1 var(--serif); color: var(--deep); font-variant-numeric: tabular-nums; margin-left: 4px; }
+    .timer-controls { display: flex; gap: 8px; }
+    .icon-btn {
+      border: 1.5px solid var(--line); border-radius: 999px;
+      background: white; color: var(--deep); padding: 9px 18px; font-weight: 750; font-size: 13px;
+    }
+    .icon-btn:hover { background: var(--mint-2); border-color: var(--accent); }
+
+    .brief-panel { margin-bottom: 30px; }
+    .brief-summary {
+      list-style: none; display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; padding: 14px 2px; border-bottom: 2px solid var(--deep);
+      font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--deep);
+    }
+    .brief-summary::-webkit-details-marker { display: none; }
+    .brief-summary span:last-child { color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 600; font-size: 13px; }
+    .brief-split { display: grid; grid-template-columns: 1.1fr .9fr; }
+    .brief-assignment { background: var(--deep); color: #fff6ea; padding: 32px 36px; }
+    .brief-assignment h2 { color: #fff6ea; font: 700 23px/1.2 var(--serif); margin-bottom: 10px; }
+    .brief-assignment p { color: #e9d2b6; margin: 0; }
+    .brief-assignment ol { color: #f3e2c9; margin: 12px 0 0; padding-left: 20px; }
+    .brief-assignment li + li { margin-top: 7px; }
+    .brief-specs { background: var(--mint-2); padding: 32px 36px; }
+    .brief-specs h2 { color: var(--deep); font: 700 23px/1.2 var(--serif); margin-bottom: 16px; }
+    .spec-list { display: grid; margin: 0; padding: 0; }
+    .spec-row { display: grid; grid-template-columns: 108px 1fr; gap: 16px; padding: 13px 0; border-bottom: 1px dashed #e3c396; }
+    .spec-row:last-child { border-bottom: 0; }
+    .spec-row dt { margin: 0; font-weight: 800; color: var(--deep-2); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+    .spec-row dd { margin: 0; color: var(--ink); font-size: 14px; }
+
+    .card {
+      border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: var(--radius);
+      background: var(--paper); box-shadow: var(--shadow); overflow: hidden;
+    }
+
+    /* ---- Kiosk device ---- */
+    .kiosk-frame {
+      display: grid; grid-template-columns: minmax(0, 1fr) 290px;
+      gap: 28px; align-items: start;
+    }
+    .kiosk-housing {
+      background: linear-gradient(165deg, var(--deep) 0%, #341b09 60%, var(--deep-2) 100%);
+      border-radius: 30px; padding: 22px; position: relative;
+      box-shadow: 0 26px 60px rgba(28,16,6,.4), inset 0 0 0 1px rgba(255,255,255,.06);
+    }
+    .housing-vents {
+      position: absolute; top: 16px; right: 26px; width: 64px; height: 8px; border-radius: 4px;
+      background: repeating-linear-gradient(90deg, rgba(255,255,255,.22) 0 3px, transparent 3px 8px);
+    }
+    .kiosk-screen {
+      background: var(--paper); border-radius: 18px; padding: 22px 22px 24px;
+      box-shadow: inset 0 3px 12px rgba(0,0,0,.18), inset 0 0 0 7px #2c1608;
+    }
+    .screen-topbar { display: flex; align-items: center; gap: 6px; margin-bottom: 16px; }
+    .screen-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+    .screen-label { margin-left: 10px; font: 700 21px/1.2 var(--serif); color: var(--deep); }
+    .secure-line { display: inline-flex; align-items: center; gap: 6px; color: var(--success); font-weight: 700; font-size: 13px; margin-left: auto; }
+    .secure-line::before { content: "✓"; display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--success-soft); font-size: 10px; }
+
+    .journey-fields { margin-bottom: 4px; }
+    .field { margin-bottom: 16px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 750; color: #3d2b18; }
+    input, select, textarea {
+      width: 100%; border: 1px solid #d9c3a6; border-radius: 11px;
+      background: white; color: var(--ink); padding: 11px 12px;
+      transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+    input::placeholder, textarea::placeholder { color: #a9998a; }
+    input:hover, select:hover, textarea:hover { border-color: #c2a883; }
+    input:focus, select:focus, textarea:focus {
+      outline: 0; border-color: var(--focus); box-shadow: 0 0 0 3px rgba(200,118,10,.15);
+    }
+    [aria-invalid="true"] { border-color: var(--danger) !important; background: #fffafa; }
+    .field-error { display: none; color: var(--danger); font-size: 12px; margin-top: 5px; font-weight: 650; }
+    .field.has-error .field-error { display: block; }
+    .field-help { color: var(--muted); font-size: 12px; margin-top: 5px; }
+
+    .lcd-fare {
+      margin: 4px 0 18px; padding: 15px 17px; border-radius: 12px;
+      background: #1c1208;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+      box-shadow: inset 0 0 0 2px #000, inset 0 2px 6px rgba(0,0,0,.6);
+    }
+    .lcd-fare .fare-meta { color: #e5a25a; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; opacity: .85; }
+    .lcd-fare .fare-amount { font: 700 27px/1 var(--mono); color: #ffb339; text-shadow: 0 0 12px rgba(255,160,50,.55); }
+
+    .method-tabs {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; margin: 0 0 18px;
+      padding: 4px; border-radius: 999px; background: var(--wash); border: 1px solid var(--line);
+    }
+    .method-tab {
+      min-height: 44px; border: 0; border-radius: 999px;
+      background: transparent; color: var(--muted); font-weight: 700;
+    }
+    .method-tab:hover { color: var(--deep); }
+    .method-tab[aria-selected="true"] { color: white; background: var(--accent); }
+    .method-tab:focus-visible, button:focus-visible, summary:focus-visible {
+      outline: 3px solid rgba(200,118,10,.28); outline-offset: 2px;
+    }
+
+    .form-panel[hidden] { display: none; }
+
+    .denom-group + .denom-group { margin-top: 14px; }
+    .denom-label { font-size: 12px; font-weight: 750; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .05em; }
+    .denom-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
+    .denom-btn {
+      min-height: 50px; border: 0; border-radius: 10px;
+      background: linear-gradient(180deg, #fffaf0, #f2e2c6);
+      color: var(--deep); font-weight: 800;
+      box-shadow: 0 3px 0 #cbae83, 0 5px 8px rgba(0,0,0,.15);
+    }
+    .denom-btn:hover { background: linear-gradient(180deg, #fff, var(--accent-soft)); }
+    .denom-btn:active { transform: translateY(3px); box-shadow: 0 0 0 #cbae83; }
+
+    .inserted-summary { margin-top: 18px; padding: 14px 16px; border-radius: 12px; background: #1c1208; box-shadow: inset 0 0 0 2px #000; }
+    .inserted-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .inserted-row .field-help { color: #c99a63; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+    .inserted-total { font: 700 20px var(--mono); color: #ffb339; }
+    .inserted-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; min-height: 24px; }
+    .chip {
+      padding: 4px 9px; border-radius: 999px; background: rgba(255,179,57,.15); color: #ffb339;
+      font-size: 12px; font-weight: 750; font-variant-numeric: tabular-nums; font-family: var(--mono);
+    }
+    .change-line { margin-top: 8px; font-size: 12px; font-weight: 700; color: #6fd39a; min-height: 18px; font-family: var(--mono); }
+
+    .cash-actions { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 16px; }
+    .pay-btn {
+      width: 100%; min-height: 52px; border: 0; border-radius: 999px;
+      color: white; background: var(--accent); font-weight: 800; letter-spacing: .01em;
+      box-shadow: 0 9px 18px rgba(250,148,12,.35);
+    }
+    .pay-btn:hover { background: #e08409; transform: translateY(-1px); }
+    .pay-btn:active { transform: translateY(0); }
+    .pay-btn:disabled { cursor: not-allowed; opacity: .45; transform: none; }
+    .ghost-btn {
+      min-height: 52px; padding: 0 16px; border: 1.5px solid var(--line); border-radius: 999px;
+      background: white; color: var(--deep-2); font-weight: 750;
+    }
+    .ghost-btn:hover { background: var(--mint-2); border-color: var(--accent); }
+    .fine-print { margin: 11px 0 0; text-align: center; color: var(--muted); font-size: 11px; }
+
+    .alt-panel {
+      padding: 24px; text-align: center; border-radius: 14px; background: var(--wash);
+    }
+    .qr-box {
+      width: 130px; height: 130px; margin: 0 auto 14px; border-radius: 16px;
+      background:
+        repeating-linear-gradient(45deg, #48270f 0 8px, transparent 8px 16px),
+        repeating-linear-gradient(-45deg, #48270f 0 8px, transparent 8px 16px);
+      background-blend-mode: multiply; background-color: #fff;
+      box-shadow: inset 0 0 0 6px #fff, inset 0 0 0 8px var(--deep);
+    }
+    .alt-panel h3 { margin-bottom: 6px; color: var(--deep); }
+    .alt-panel p { max-width: 410px; margin: 0 auto 15px; color: var(--muted); font-size: 13px; }
+    .alt-btn { border: 1.5px solid var(--deep); border-radius: 999px; background: white; color: var(--deep); padding: 10px 18px; font-weight: 750; }
+    .alt-btn:hover { background: var(--mint-2); }
+    .alt-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+    .kiosk-base { display: flex; gap: 12px; margin: 18px 4px 2px; }
+    .coin-slot, .card-slot, .receipt-slot { flex: 1; height: 11px; border-radius: 6px; background: #180d05; box-shadow: inset 0 2px 4px rgba(0,0,0,.6); }
+
+    .receipt-ticket {
+      position: sticky; top: 96px;
+      background: #fffaf0; border-radius: 3px;
+      padding: 24px 18px 20px; font-family: var(--mono);
+      box-shadow: 0 16px 34px rgba(36,22,8,.2);
+      transform: rotate(.8deg);
+    }
+    .ticket-head { display: flex; justify-content: space-between; align-items: baseline; font-weight: 800; color: var(--deep-2); font-size: 12px; letter-spacing: .07em; border-bottom: 1px dashed var(--line); padding-bottom: 12px; margin-bottom: 14px; text-transform: uppercase; }
+    .session-id { color: var(--muted); font-size: 11px; font-weight: 600; }
+    .ticket-rows { display: grid; gap: 10px; }
+    .ticket-row { display: flex; justify-content: space-between; gap: 20px; color: var(--muted); font-size: 13px; }
+    .ticket-row.grand { margin-top: 5px; padding-top: 13px; border-top: 1px dashed var(--line); color: var(--ink); font-size: 17px; font-weight: 850; }
+    .scenario-box { margin-top: 20px; border-top: 1px dashed var(--line); padding-top: 16px; font-family: var(--sans); }
+    .scenario-box summary { list-style: none; cursor: pointer; color: var(--deep); font-size: 13px; font-weight: 800; }
+    .scenario-box summary::-webkit-details-marker { display: none; }
+    .scenario-box p { margin: 8px 0 10px; color: var(--muted); font-size: 12px; }
+    .scenario-box select { font-size: 13px; font-family: var(--sans); }
+
+    .workspace { margin-top: 44px; }
+    .workspace-ribbon {
+      background: var(--deep); color: #fff6ea; padding: 24px 28px;
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap;
+    }
+    .workspace-ribbon h2 { color: #fff6ea; font: 700 27px/1.2 var(--serif); margin-bottom: 4px; }
+    .workspace-ribbon p { margin: 0; color: #d9b78e; font-size: 13px; }
+    .workspace-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .workspace-body { background: var(--paper); border: 1px solid var(--line); border-top: 0; }
+    .btn {
+      border: 1.5px solid var(--line); border-radius: 999px; background: white;
+      color: var(--deep); padding: 9px 14px; font-size: 13px; font-weight: 750;
+    }
+    .btn:hover { background: var(--mint-2); border-color: var(--accent); }
+    .btn.primary { background: var(--deep); color: white; border-color: var(--deep); }
+    .btn.primary:hover { background: var(--deep-2); }
+    .btn.on-dark { border-color: rgba(255,255,255,.35); color: #fff6ea; background: rgba(255,255,255,.08); }
+    .btn.on-dark:hover { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.5); }
+    .btn.on-dark.primary { background: var(--accent); border-color: var(--accent); color: #241608; }
+    .btn.on-dark.primary:hover { background: #ffb339; }
+    .notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 20px 24px 0; }
+    .notes-grid textarea {
+      min-height: 92px; resize: vertical;
+      background-image: repeating-linear-gradient(transparent 0 27px, var(--soft-line) 27px 28px);
+      background-position: 0 34px;
+    }
+    .test-list { padding: 20px 24px 24px; }
+    .test-list-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .test-list-head h3 { margin: 0; color: var(--deep); }
+    .count { color: var(--muted); font-size: 12px; }
+    .test-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+    table { width: 100%; min-width: 850px; border-collapse: collapse; }
+    th { padding: 10px; text-align: left; color: var(--muted); background: #faf1e2; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+    td { padding: 8px; border-top: 1px solid var(--soft-line); vertical-align: top; }
+    td:first-child { width: 40px; color: var(--muted); text-align: center; padding-top: 18px; font-weight: 700; }
+    .cell-input { min-height: 40px; padding: 9px; border-color: transparent; background: transparent; }
+    .cell-input:hover { border-color: var(--line); background: white; }
+    .cell-input:focus { background: white; }
+    .priority-select { min-width: 96px; }
+    .remove-row { border: 0; background: transparent; color: #9c8873; font-size: 18px; padding: 7px; border-radius: 8px; }
+    .remove-row:hover { color: var(--danger); background: var(--danger-soft); }
+    .empty-note { padding: 24px; text-align: center; color: var(--muted); }
+
+    .toast-region { position: fixed; right: 20px; bottom: 20px; z-index: 50; display: grid; gap: 10px; }
+    .toast {
+      width: min(380px, calc(100vw - 40px)); padding: 14px 16px; border-radius: 13px;
+      color: var(--ink); background: white; border: 1px solid var(--line);
+      box-shadow: 0 18px 45px rgba(72,39,15,.22); animation: toast-in .22s ease-out;
+    }
+    .toast strong { display: block; color: var(--deep); margin-bottom: 2px; }
+    .toast.success { border-left: 5px solid var(--success); }
+    .toast.error { border-left: 5px solid var(--danger); }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(10px); } }
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 45; display: grid; place-items: center;
+      padding: 20px; background: rgba(36,22,8,.62); backdrop-filter: blur(3px);
+    }
+    .modal-backdrop[hidden] { display: none; }
+    .modal {
+      width: min(420px, 100%); border-radius: 4px; background: #fffaf0; padding: 30px 24px 24px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.3); text-align: center;
+      font-family: var(--mono); position: relative;
+    }
+    .modal-icon { width: 58px; height: 58px; display: grid; place-items: center; margin: 0 auto 15px; border-radius: 50%; background: var(--success-soft); color: var(--success); font-size: 27px; font-weight: 900; font-family: var(--sans); }
+    .modal h2 { margin-bottom: 7px; font: 700 26px/1.2 var(--serif); color: var(--deep); font-family: var(--serif); }
+    .modal p { color: var(--muted); font-size: 13px; }
+    .modal .btn { min-width: 130px; font-family: var(--sans); margin-top: 8px; }
+
+    @media (max-width: 900px) {
+      .kiosk-frame { grid-template-columns: 1fr; }
+      .receipt-ticket { position: static; }
+      .brief-split { grid-template-columns: 1fr; }
+      .notes-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 620px) {
+      .shell { width: min(100% - 20px, 1240px); margin-top: 18px; }
+      .topbar, .hazard-stripe { padding-inline: 12px; }
+      .brand-sub { display: none; }
+      .icon-btn { padding: 8px 14px; }
+      .field-row, .denom-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .brief-assignment, .brief-specs { padding: 22px 20px; }
+      .workspace-ribbon { flex-direction: column; }
+      .workspace-actions { justify-content: flex-start; }
+      .notes-grid, .test-list { padding-left: 15px; padding-right: 15px; }
+      h1 { font-size: 36px; }
+      .kiosk-housing { padding: 14px; border-radius: 22px; }
+      .kiosk-screen { padding: 16px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <img src="data:image/png;base64,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" alt="VASUP">
+      </div>
+      <div>
+        <div class="brand-title">VASUP Line</div>
+        <div class="brand-sub">QA interview environment</div>
+      </div>
+    </div>
+  </header>
+  <div class="hazard-stripe" aria-hidden="true"></div>
+
+  <main class="shell">
+    <section class="intro" aria-labelledby="pageTitle">
+      <p class="eyebrow">Interview exercise · 10 minutes</p>
+      <h1 id="pageTitle">Ticket vending machine test design</h1>
+      <p class="intro-copy">Explore the VASUP Line ticket vending machine, identify risks, and document a thoughtful set of test cases. This is a sandbox—no real fare will be charged.</p>
+      <div class="tester-row">
+        <label for="testerName">Tester name</label>
+        <input id="testerName" type="text" placeholder="Enter your name" autocomplete="name">
+      </div>
+      <div class="timer-bar">
+        <div class="timer" id="timerWrap" aria-label="Exercise timer">
+          <span class="timer-dot" aria-hidden="true"></span>
+          <span class="timer-label">Time remaining</span>
+          <strong id="timerText">10:00</strong>
+        </div>
+        <div class="timer-controls">
+          <button class="icon-btn" id="timerButton" type="button">Start</button>
+          <button class="icon-btn" id="resetButton" type="button">Reset</button>
+        </div>
+      </div>
+    </section>
+
+    <details class="brief-panel" open>
+      <summary class="brief-summary">
+        <span>Candidate brief &amp; acceptance context</span>
+        <span>Collapse / expand</span>
+      </summary>
+      <div class="brief-split">
+        <div class="brief-assignment">
+          <h2>Your assignment</h2>
+          <p>You are testing a ticket vending machine for the VASUP Line. Use exploratory testing, then record the highest-value functional and non-functional test cases in the workspace below.</p>
+          <ol>
+            <li>Explore station selection, fare calculation for every distance, both payment methods, and change/error recovery.</li>
+            <li>Consider positive, negative, boundary, accessibility, security, and reliability scenarios.</li>
+            <li>Write clear steps and expected results. Prioritize by customer and business risk.</li>
+            <li>Be ready to explain what you would automate, what you would not, and why.</li>
+          </ol>
+        </div>
+        <div class="brief-specs">
+          <h2>Product context</h2>
+          <dl class="spec-list">
+            <div class="spec-row"><dt>Stations</dt><dd>8 stations on the line (A–H)</dd></div>
+            <div class="spec-row"><dt>Fare rule</dt><dd>5 THB for 1–4 stations, +5 THB per extra 4 stations</dd></div>
+            <div class="spec-row"><dt>Payment</dt><dd>Cash (with change) or TrueMoney Wallet QR</dd></div>
+            <div class="spec-row"><dt>Success rule</dt><dd>Valid payment issues one travel token</dd></div>
+          </dl>
+        </div>
+      </div>
+    </details>
+
+    <section class="kiosk-frame" aria-label="Ticket kiosk sandbox">
+      <div class="kiosk-housing">
+        <div class="housing-vents" aria-hidden="true"></div>
+        <div class="kiosk-screen">
+          <div class="screen-topbar">
+            <span class="screen-dot" aria-hidden="true"></span>
+            <span class="screen-dot" aria-hidden="true"></span>
+            <span class="screen-dot" aria-hidden="true"></span>
+            <span class="screen-label">Buy a ticket</span>
+            <span class="secure-line">Live session</span>
+          </div>
+
+          <div class="journey-fields">
+            <div class="field-row">
+              <div class="field" data-field="fromStation">
+                <label for="fromStation">From station *</label>
+                <select id="fromStation" name="fromStation" required>
+                  <option value="">Select station</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                  <option value="E">E</option>
+                  <option value="F">F</option>
+                  <option value="G">G</option>
+                  <option value="H">H</option>
+                </select>
+                <div class="field-error" id="fromStationError">Select the departure station.</div>
+              </div>
+              <div class="field" data-field="toStation">
+                <label for="toStation">To station *</label>
+                <select id="toStation" name="toStation" required>
+                  <option value="">Select station</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                  <option value="E">E</option>
+                  <option value="F">F</option>
+                  <option value="G">G</option>
+                  <option value="H">H</option>
+                </select>
+                <div class="field-error" id="toStationError">Select the destination station.</div>
+              </div>
+            </div>
+            <div class="lcd-fare" aria-live="polite">
+              <div class="fare-meta" id="fareMeta">Select both stations to calculate the fare.</div>
+              <div class="fare-amount" id="fareAmount">— THB</div>
+            </div>
+          </div>
+
+          <div class="method-tabs" role="tablist" aria-label="Payment method">
+            <button class="method-tab" id="tab-cash" role="tab" aria-selected="true" aria-controls="panel-cash" type="button" data-method="cash">Cash</button>
+            <button class="method-tab" id="tab-tmw" role="tab" aria-selected="false" aria-controls="panel-tmw" type="button" data-method="tmw">TrueMoney Wallet</button>
+          </div>
+
+          <div class="payment-area">
+            <section class="form-panel" id="panel-cash" role="tabpanel" aria-labelledby="tab-cash">
+              <div class="denom-group">
+                <div class="denom-label">Insert banknotes</div>
+                <div class="denom-grid">
+                  <button class="denom-btn" type="button" data-value="20">20 THB</button>
+                  <button class="denom-btn" type="button" data-value="50">50 THB</button>
+                  <button class="denom-btn" type="button" data-value="100">100 THB</button>
+                </div>
+              </div>
+              <div class="denom-group">
+                <div class="denom-label">Insert coins</div>
+                <div class="denom-grid">
+                  <button class="denom-btn" type="button" data-value="1">1 THB</button>
+                  <button class="denom-btn" type="button" data-value="2">2 THB</button>
+                  <button class="denom-btn" type="button" data-value="5">5 THB</button>
+                  <button class="denom-btn" type="button" data-value="10">10 THB</button>
+                </div>
+              </div>
+              <div class="inserted-summary">
+                <div class="inserted-row">
+                  <span class="field-help">Amount inserted</span>
+                  <span class="inserted-total" id="insertedTotal">0 THB</span>
+                </div>
+                <div class="inserted-chips" id="insertedChips" aria-live="polite"></div>
+                <div class="change-line" id="changeLine" aria-live="polite"></div>
+              </div>
+              <div class="cash-actions">
+                <button class="pay-btn" id="cashConfirm" type="button" disabled>Confirm payment</button>
+                <button class="ghost-btn" id="cashCancel" type="button">Cancel &amp; return money</button>
+              </div>
+              <p class="fine-print">Exact change is not required — the machine returns any change for cash payments.</p>
+            </section>
+
+            <section class="form-panel" id="panel-tmw" role="tabpanel" aria-labelledby="tab-tmw" hidden>
+              <div class="alt-panel">
+                <div class="qr-box" id="qrBox" hidden aria-hidden="true"></div>
+                <h3 id="tmwHeading">Pay with TrueMoney Wallet</h3>
+                <p id="tmwCopy">Generate a QR code, then scan it with the TrueMoney Wallet app to pay for this journey.</p>
+                <button class="alt-btn" type="button" id="generateQr">Generate QR code</button>
+                <button class="alt-btn" type="button" id="simulateScan" hidden>I have completed the scan</button>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div class="kiosk-base" aria-hidden="true">
+          <div class="coin-slot"></div>
+          <div class="card-slot"></div>
+          <div class="receipt-slot"></div>
+        </div>
+      </div>
+
+      <aside class="receipt-ticket" aria-label="Journey summary">
+        <div class="ticket-head"><span>VASUP Line</span><span class="session-id">#VSP-04217</span></div>
+        <div class="ticket-rows">
+          <div class="ticket-row"><span>From</span><span id="summaryFrom">—</span></div>
+          <div class="ticket-row"><span>To</span><span id="summaryTo">—</span></div>
+          <div class="ticket-row"><span>Distance</span><span id="summaryDistance">—</span></div>
+          <div class="ticket-row"><span>Payment method</span><span id="summaryMethod">Cash</span></div>
+          <div class="ticket-row grand"><span>Fare</span><span id="summaryFare">— THB</span></div>
+        </div>
+        <details class="scenario-box">
+          <summary>Interviewer scenario controls</summary>
+          <p>Use these controls to simulate a payment outcome after the amount inserted (cash) or QR scan (TrueMoney Wallet) is confirmed.</p>
+          <label for="scenario">Payment outcome</label>
+          <select id="scenario">
+            <option value="approved">Approved</option>
+            <option value="declined">TMW: payment declined</option>
+            <option value="network">TMW: network timeout</option>
+            <option value="duplicate">TMW: duplicate scan detected</option>
+            <option value="insufficientChange">Cash: insufficient change in machine</option>
+          </select>
+        </details>
+      </aside>
+    </section>
+
+    </section>
+
+    <section class="workspace" aria-labelledby="workspaceTitle">
+      <div class="workspace-ribbon">
+        <div><h2 id="workspaceTitle">Candidate test case workspace</h2><p>Your notes save automatically in this browser. Export your work before resetting.</p></div>
+        <div class="workspace-actions">
+          <button class="btn on-dark" id="addCase" type="button">+ Add test case</button>
+          <button class="btn on-dark" id="clearCases" type="button">Clear</button>
+          <button class="btn on-dark primary" id="exportCases" type="button">Export CSV</button>
+        </div>
+      </div>
+      <div class="workspace-body">
+        <div class="notes-grid">
+          <div><label for="riskNotes">Risks &amp; assumptions</label><textarea id="riskNotes" placeholder="What is unclear? What could cause the greatest customer or business harm?"></textarea></div>
+          <div><label for="automationNotes">Automation approach</label><textarea id="automationNotes" placeholder="What would you automate at unit, API, UI, or monitoring level—and why?"></textarea></div>
+        </div>
+        <div class="test-list">
+          <div class="test-list-head"><h3>Test cases</h3><span class="count" id="caseCount">0 cases</span></div>
+          <div class="test-table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Test scenario</th><th>Steps / test data</th><th>Expected result</th><th>Priority</th><th><span class="sr-only">Remove</span></th></tr></thead>
+              <tbody id="caseRows"></tbody>
+            </table>
+            <div class="empty-note" id="emptyNote">No cases yet. Add a test case to begin.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+  <div class="modal-backdrop" id="successModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="successTitle">
+      <div class="modal-icon" aria-hidden="true">✓</div>
+      <h2 id="successTitle">Ticket issued</h2>
+      <p>Travel token <strong id="modalToken">#VSP-0482</strong> has been issued. <span id="modalChange"></span></p>
+      <button class="btn primary" id="closeModal" type="button">Continue testing</button>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+      const storageKey = 'qa-ticket-vending-machine-interview-v1';
+      const stations = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+      let timerSeconds = 10 * 60;
+      let timerId = null;
+      let cases = [];
+      let insertedTotal = 0;
+      let insertedChips = [];
+      let tokenSeq = 481;
+
+      function showToast(title, message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<strong></strong><span></span>`;
+        $('strong', toast).textContent = title;
+        $('span', toast).textContent = message;
+        $('#toastRegion').appendChild(toast);
+        setTimeout(() => toast.remove(), 4300);
+      }
+
+      function setMethod(method) {
+        $$('.method-tab').forEach(tab => {
+          const active = tab.dataset.method === method;
+          tab.setAttribute('aria-selected', String(active));
+          tab.tabIndex = active ? 0 : -1;
+        });
+        $$('.form-panel').forEach(panel => { panel.hidden = panel.id !== `panel-${method}`; });
+        $('#summaryMethod').textContent = method === 'cash' ? 'Cash' : 'TrueMoney Wallet';
+      }
+
+      $$('.method-tab').forEach((tab, index, tabs) => {
+        tab.addEventListener('click', () => setMethod(tab.dataset.method));
+        tab.addEventListener('keydown', event => {
+          if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+          event.preventDefault();
+          const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : (index - 1 + tabs.length) % tabs.length;
+          tabs[next].focus();
+          setMethod(tabs[next].dataset.method);
+        });
+      });
+
+      function distanceBetween(from, to) {
+        return Math.abs(stations.indexOf(to) - stations.indexOf(from));
+      }
+      function fareFor(distance) {
+        return Math.floor(distance / 4) * 5 + 5;
+      }
+
+      let currentFare = null;
+
+      function refreshJourney() {
+        const from = $('#fromStation').value;
+        const to = $('#toStation').value;
+        const ready = Boolean(from && to);
+        if (!ready) {
+          currentFare = null;
+          $('#fareMeta').textContent = 'Select both stations to calculate the fare.';
+          $('#fareAmount').textContent = '— THB';
+          $('#summaryFrom').textContent = from || '—';
+          $('#summaryTo').textContent = to || '—';
+          $('#summaryDistance').textContent = '—';
+          $('#summaryFare').textContent = '— THB';
+        } else {
+          const distance = distanceBetween(from, to);
+          currentFare = fareFor(distance);
+          $('#fareMeta').textContent = `${from} → ${to} · ${distance} station${distance === 1 ? '' : 's'}`;
+          $('#fareAmount').textContent = `${currentFare} THB`;
+          $('#summaryFrom').textContent = from;
+          $('#summaryTo').textContent = to;
+          $('#summaryDistance').textContent = `${distance} station${distance === 1 ? '' : 's'}`;
+          $('#summaryFare').textContent = `${currentFare} THB`;
+        }
+        updateCashControls();
+      }
+      $('#fromStation').addEventListener('change', refreshJourney);
+      $('#toStation').addEventListener('change', refreshJourney);
+
+      function renderInserted() {
+        $('#insertedTotal').textContent = `${insertedTotal} THB`;
+        const holder = $('#insertedChips');
+        holder.innerHTML = '';
+        insertedChips.forEach(value => {
+          const chip = document.createElement('span');
+          chip.className = 'chip';
+          chip.textContent = `+${value}`;
+          holder.appendChild(chip);
+        });
+        if (currentFare !== null && insertedTotal > currentFare) {
+          $('#changeLine').textContent = `Change due: ${insertedTotal - currentFare} THB`;
+        } else {
+          $('#changeLine').textContent = '';
+        }
+        updateCashControls();
+      }
+      function updateCashControls() {
+        $('#cashConfirm').disabled = !(currentFare !== null && insertedTotal >= currentFare);
+      }
+      $$('.denom-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const value = Number(btn.dataset.value);
+          insertedTotal += value;
+          insertedChips.push(value);
+          renderInserted();
+        });
+      });
+      $('#cashCancel').addEventListener('click', () => {
+        insertedTotal = 0;
+        insertedChips = [];
+        renderInserted();
+        showToast('Money returned', 'All inserted coins and banknotes have been returned.');
+      });
+
+      function issueToken(change) {
+        tokenSeq += 1;
+        $('#modalToken').textContent = `#VSP-${tokenSeq}`;
+        $('#modalChange').textContent = change > 0 ? `Change dispensed: ${change} THB.` : '';
+        $('#successModal').hidden = false;
+        $('#closeModal').focus();
+      }
+
+      $('#cashConfirm').addEventListener('click', () => {
+        if (currentFare === null || insertedTotal < currentFare) return;
+        const amountAtConfirm = insertedTotal;
+        $('#cashConfirm').textContent = 'Issuing token…';
+        setTimeout(() => {
+          $('#cashConfirm').textContent = 'Confirm payment';
+          const change = amountAtConfirm - currentFare;
+          issueToken(change);
+          insertedTotal = 0;
+          insertedChips = [];
+          renderInserted();
+        }, 900);
+      });
+
+      $('#generateQr').addEventListener('click', () => {
+        $('#qrBox').hidden = false;
+        $('#generateQr').hidden = true;
+        $('#simulateScan').hidden = false;
+        $('#tmwCopy').textContent = 'Scan the QR code above with the TrueMoney Wallet app, then confirm below once you have completed the scan.';
+      });
+      $('#simulateScan').addEventListener('click', () => {
+        const btn = $('#simulateScan');
+        btn.disabled = true;
+        btn.textContent = 'Confirming…';
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = 'I have completed the scan';
+          const scenario = $('#scenario').value;
+          if (scenario === 'declined') {
+            showToast('Payment declined', 'TrueMoney Wallet declined this payment. Try again or use cash.', 'error');
+          } else if (scenario === 'network') {
+            showToast('Connection timed out', 'We could not confirm the QR payment. Please try again.', 'error');
+          } else if (scenario === 'duplicate') {
+            showToast('Duplicate scan detected', 'This QR code was already used for a completed payment.', 'error');
+          } else {
+            issueToken(0);
+            $('#qrBox').hidden = true;
+            $('#generateQr').hidden = false;
+            $('#simulateScan').hidden = true;
+            $('#tmwCopy').textContent = 'Generate a QR code, then scan it with the TrueMoney Wallet app to pay for this journey.';
+          }
+        }, 900);
+      });
+
+      $('#closeModal').addEventListener('click', () => { $('#successModal').hidden = true; });
+      $('#successModal').addEventListener('click', event => { if (event.target === event.currentTarget) $('#closeModal').click(); });
+      document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('#successModal').hidden) $('#closeModal').click(); });
+
+      function updateTimer() {
+        const mins = Math.floor(timerSeconds / 60);
+        const secs = timerSeconds % 60;
+        $('#timerText').textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+        document.title = `${$('#timerText').textContent} · QA Ticket Vending Machine Exercise`;
+        if (timerSeconds === 0) {
+          clearInterval(timerId); timerId = null;
+          $('#timerButton').textContent = 'Restart';
+          $('#timerWrap').classList.remove('running');
+          showToast('Time is up', 'Finish the current thought and prepare to discuss your approach.', 'error');
+        }
+      }
+      $('#timerButton').addEventListener('click', () => {
+        if (timerSeconds === 0) timerSeconds = 10 * 60;
+        if (timerId) {
+          clearInterval(timerId); timerId = null; $('#timerButton').textContent = 'Resume'; $('#timerWrap').classList.remove('running');
+        } else {
+          timerId = setInterval(() => { timerSeconds -= 1; updateTimer(); }, 1000);
+          $('#timerButton').textContent = 'Pause'; $('#timerWrap').classList.add('running');
+        }
+        updateTimer();
+      });
+
+      function saveWorkspace() {
+        const data = { cases, testerName: $('#testerName').value, riskNotes: $('#riskNotes').value, automationNotes: $('#automationNotes').value };
+        try { localStorage.setItem(storageKey, JSON.stringify(data)); } catch (_) {}
+      }
+      function escapeCsv(value) { return `"${String(value ?? '').replace(/"/g, '""')}"`; }
+      function renderCases() {
+        const body = $('#caseRows');
+        body.innerHTML = '';
+        cases.forEach((item, index) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${index + 1}</td>
+            <td><input class="cell-input" data-key="scenario" aria-label="Test scenario ${index + 1}" placeholder="e.g. Exact fare boundary at 4 stations"></td>
+            <td><textarea class="cell-input" data-key="steps" aria-label="Steps and data ${index + 1}" rows="2" placeholder="Steps and test data"></textarea></td>
+            <td><textarea class="cell-input" data-key="expected" aria-label="Expected result ${index + 1}" rows="2" placeholder="Observable expected result"></textarea></td>
+            <td><select class="cell-input priority-select" data-key="priority" aria-label="Priority ${index + 1}"><option>High</option><option>Medium</option><option>Low</option></select></td>
+            <td><button class="remove-row" type="button" aria-label="Remove test case ${index + 1}" title="Remove">×</button></td>`;
+          $$('[data-key]', row).forEach(input => {
+            input.value = item[input.dataset.key] || '';
+            input.addEventListener('input', () => { cases[index][input.dataset.key] = input.value; saveWorkspace(); });
+          });
+          $('.remove-row', row).addEventListener('click', () => { cases.splice(index, 1); renderCases(); saveWorkspace(); });
+          body.appendChild(row);
+        });
+        $('#emptyNote').hidden = cases.length > 0;
+        $('#caseCount').textContent = `${cases.length} ${cases.length === 1 ? 'case' : 'cases'}`;
+      }
+      function addCase(focus = true) {
+        cases.push({ scenario: '', steps: '', expected: '', priority: 'High' });
+        renderCases(); saveWorkspace();
+        if (focus) $$('[data-key="scenario"]')[cases.length - 1]?.focus();
+      }
+      $('#addCase').addEventListener('click', () => addCase());
+      $('#clearCases').addEventListener('click', () => {
+        if (cases.length && !confirm('Clear all test cases and notes?')) return;
+        cases = []; $('#testerName').value = ''; $('#riskNotes').value = ''; $('#automationNotes').value = ''; renderCases(); saveWorkspace();
+      });
+      ['testerName', 'riskNotes', 'automationNotes'].forEach(id => $(`#${id}`).addEventListener('input', saveWorkspace));
+      $('#exportCases').addEventListener('click', () => {
+        const header = ['No.', 'Test scenario', 'Steps / test data', 'Expected result', 'Priority'];
+        const rows = cases.map((item, i) => [i + 1, item.scenario, item.steps, item.expected, item.priority]);
+        rows.push([], ['Tester name', $('#testerName').value], ['Risks & assumptions', $('#riskNotes').value], ['Automation approach', $('#automationNotes').value]);
+        const csv = [header, ...rows].map(row => row.map(escapeCsv).join(',')).join('\r\n');
+        const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob); link.download = 'qa-ticket-vending-machine-test-cases.csv'; link.click();
+        URL.revokeObjectURL(link.href);
+        showToast('CSV exported', 'Your test cases were downloaded.');
+      });
+
+      $('#resetButton').addEventListener('click', () => {
+        if (!confirm('Reset the kiosk sandbox and timer? Your test case workspace will be kept.')) return;
+        $('#fromStation').value = ''; $('#toStation').value = '';
+        insertedTotal = 0; insertedChips = [];
+        $('#qrBox').hidden = true; $('#generateQr').hidden = false; $('#simulateScan').hidden = true;
+        $('#tmwCopy').textContent = 'Generate a QR code, then scan it with the TrueMoney Wallet app to pay for this journey.';
+        setMethod('cash');
+        refreshJourney();
+        renderInserted();
+        clearInterval(timerId); timerId = null; timerSeconds = 10 * 60; $('#timerButton').textContent = 'Start'; $('#timerWrap').classList.remove('running'); updateTimer();
+      });
+
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+        if (saved) {
+          cases = Array.isArray(saved.cases) ? saved.cases : [];
+          $('#testerName').value = saved.testerName || '';
+          $('#riskNotes').value = saved.riskNotes || '';
+          $('#automationNotes').value = saved.automationNotes || '';
+        }
+      } catch (_) {}
+      renderCases();
+      saveWorkspace();
+      refreshJourney();
+      renderInserted();
+      updateTimer();
+    })();
+  </script>
+</body>
+</html>
