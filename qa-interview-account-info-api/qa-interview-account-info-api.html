@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>QA Interview Exercise — VASUP Account Lookup API</title>
+  <style>
+    :root {
+      --ink: #241608; --muted: #7a6a5c; --line: #ecd9c2; --soft-line: #f6ead9;
+      --paper: #ffffff; --wash: #fdf6ec; --deep: #48270f; --deep-2: #67381c;
+      --mint: #fce9d2; --mint-2: #fff6ea; --accent: #fa940c; --accent-soft: #fff1de;
+      --danger: #e01119; --danger-soft: #fdecec; --success: #20764e; --success-soft: #eaf7ef;
+      --focus: #c8760a; --shadow: 0 14px 34px rgba(72, 39, 15, .08); --radius: 6px;
+      --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --serif: Iowan Old Style, Palatino Linotype, Georgia, serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --console-bg: #1b130b; --console-surface: #2a1f12; --console-surface-2: #241a10;
+      --console-border: #4a3520; --console-text: #f1e6d3; --console-muted: #b9a689;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--ink); background: var(--wash); font: 15px/1.5 var(--sans); }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+    code { font-family: var(--mono); }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    .topbar { min-height: 92px; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 12px clamp(18px, 4vw, 64px); color: #fff6ea; background: #1a0f06; border-bottom: 1px solid var(--accent); position: sticky; top: 0; z-index: 20; }
+    .status-line { position: sticky; top: 92px; z-index: 19; background: #120b06; color: #8a9c86; font: 11px/1 var(--mono); padding: 8px clamp(18px, 4vw, 64px); border-bottom: 1px solid #2a1f12; letter-spacing: .02em; overflow-x: auto; white-space: nowrap; }
+    .status-line strong { color: #ffb454; font-weight: 700; }
+    .status-line .sep { color: #4a3d2c; margin: 0 10px; }
+    .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .brand-mark { width: 68px; height: 68px; border-radius: 16px; flex: none; overflow: hidden; box-shadow: 0 0 0 2.5px #fff6ea, 0 0 0 4px rgba(0,0,0,.15), 0 10px 20px rgba(0,0,0,.4); }
+    .brand-mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .brand-title { font-weight: 800; letter-spacing: -.01em; font-size: 17px; }
+    .brand-sub { color: #d9b78e; font-size: 12px; letter-spacing: .03em; }
+
+    .shell { width: min(1260px, calc(100% - 32px)); margin: 28px auto 70px; }
+    .intro { margin-bottom: 30px; }
+    .eyebrow { display: inline-block; margin: 0 0 9px; color: var(--deep-2); text-transform: uppercase; font-size: 11px; font-weight: 800; letter-spacing: .1em; padding: 4px 11px; border-radius: 999px; background: var(--accent-soft); }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 8px; font: 700 clamp(28px, 4vw, 46px)/1.05 var(--serif); letter-spacing: -.03em; color: var(--deep); }
+    .intro-copy { margin: 0; max-width: 720px; color: var(--muted); font-size: 16px; }
+    .intro-copy code { background: var(--mint-2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; font-size: 13px; }
+
+    .tester-row { margin-top: 18px; max-width: 320px; }
+    .tester-row label { display: block; margin-bottom: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+    .tester-row input { width: 100%; }
+    .timer-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-top: 22px; padding-top: 18px; border-top: 2px dashed var(--line); max-width: 640px; }
+    .timer { display: flex; align-items: center; gap: 10px; }
+    .timer-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+    .timer.running .timer-dot { animation: pulse 1.4s infinite; }
+    @keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(250,148,12,.25); } }
+    .timer-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .09em; font-weight: 800; }
+    .timer strong { font: 700 32px/1 var(--mono); color: var(--deep); font-variant-numeric: tabular-nums; margin-left: 4px; }
+    .timer-controls { display: flex; gap: 8px; }
+    .icon-btn { border: 1.5px solid var(--line); border-radius: 5px; background: white; color: var(--deep); padding: 9px 18px; font-weight: 750; font-size: 13px; }
+    .icon-btn:hover { background: var(--mint-2); border-color: var(--accent); }
+
+    .brief-panel { margin-bottom: 30px; }
+    .brief-summary { list-style: none; display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 14px 2px; border-bottom: 2px solid var(--deep); font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--deep); }
+    .brief-summary::-webkit-details-marker { display: none; }
+    .brief-summary span:last-child { color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 600; font-size: 13px; }
+    .brief-split { display: grid; grid-template-columns: 1.05fr .95fr; }
+    .brief-assignment { background: var(--paper); border-right: 1px solid var(--line); border-left: 5px solid var(--accent); padding: 32px 36px; }
+    .brief-assignment h2 { color: var(--deep); font: 700 23px/1.2 var(--serif); margin-bottom: 10px; }
+    .brief-assignment p { color: var(--muted); margin: 0; }
+    .brief-assignment ol { color: #4b3a28; margin: 12px 0 0; padding-left: 20px; }
+    .brief-assignment li + li { margin-top: 7px; }
+    .brief-specs { background: var(--console-bg); color: var(--console-text); padding: 32px 36px; }
+    .brief-specs h2 { color: #fff6ea; font: 700 23px/1.2 var(--serif); margin-bottom: 14px; }
+    .scope-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .scope-item { padding: 12px 14px; border-radius: 5px; background: var(--console-surface); border: 1px solid var(--console-border); }
+    .scope-item strong { display: block; margin-bottom: 3px; color: #ffb454; font: 700 12px/1.3 var(--mono); text-transform: none; }
+    .scope-item span { color: var(--console-muted); font-size: 12px; }
+
+    /* ---- API console sandbox ---- */
+    .console { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 22px; align-items: start; }
+    .console-main { background: var(--console-bg); border: 1px solid var(--console-border); border-radius: var(--radius); overflow: hidden; box-shadow: 0 22px 46px rgba(20,12,4,.3); }
+
+    .request-bar { display: flex; align-items: center; gap: 10px; padding: 14px 16px; background: var(--console-surface-2); border-bottom: 1px solid var(--console-border); }
+    .method-chip { font: 800 12px/1 var(--mono); color: #0d1a10; background: #6fd68a; padding: 7px 10px; border-radius: 4px; letter-spacing: .04em; flex: none; }
+    .request-url { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; color: var(--console-text); font: 13px/1.4 var(--mono); }
+    .send-btn { flex: none; border: 0; border-radius: 4px; background: var(--accent); color: #241608; font: 800 13px/1 var(--sans); padding: 11px 18px; }
+    .send-btn:hover { background: #ffb339; }
+    .send-btn:disabled { opacity: .6; cursor: progress; }
+
+    .params-panel { padding: 16px; border-bottom: 1px solid var(--console-border); }
+    .params-head { font: 800 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--console-muted); margin-bottom: 10px; }
+    table.params-table { width: 100%; border-collapse: collapse; }
+    .params-table th { text-align: left; padding: 0 10px 8px; font: 700 10px/1 var(--mono); text-transform: uppercase; letter-spacing: .06em; color: #7b6b52; }
+    .params-table td { padding: 6px 10px; vertical-align: middle; }
+    .params-table td:first-child code { color: #ffb454; font-weight: 700; font-size: 13px; }
+    .req-chip { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+    .req-chip.mandatory { background: rgba(224,17,25,.22); color: #ff9195; }
+    .req-chip.optional { background: rgba(250,148,12,.18); color: #ffbf6b; }
+    .field { position: relative; }
+    .params-table input, .params-table select { width: 100%; min-width: 160px; background: var(--console-surface); border: 1px solid var(--console-border); border-radius: 4px; color: var(--console-text); padding: 9px 10px; font-family: var(--mono); font-size: 13px; }
+    .params-table input::placeholder { color: #6b5b45; }
+    .params-table input:hover, .params-table select:hover { border-color: #6b5334; }
+    .params-table input:focus, .params-table select:focus { outline: 0; border-color: var(--focus); box-shadow: 0 0 0 3px rgba(250,148,12,.35); }
+    .params-table [aria-invalid="true"] { border-color: var(--danger) !important; }
+    .field-error { display: none; color: #ff8f93; font-size: 11px; margin-top: 5px; font-weight: 650; }
+    .field.has-error .field-error { display: block; }
+
+    .response-panel { padding: 16px; }
+    .response-tabs { display: flex; gap: 2px; margin-bottom: 10px; }
+    .response-tabs [role="tab"] { border: 1px solid var(--console-border); border-bottom: 0; background: var(--console-surface-2); color: var(--console-muted); font: 700 11px/1 var(--mono); padding: 8px 14px; border-radius: 4px 4px 0 0; }
+    .response-tabs [role="tab"][aria-selected="true"] { background: var(--console-surface); color: #ffb454; }
+    .response-tabs [role="tab"]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+    .response-meta { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--console-surface); border: 1px solid var(--console-border); border-bottom: 0; }
+    .status-chip { font: 800 12px/1 var(--mono); padding: 5px 10px; border-radius: 4px; background: #33261a; color: var(--console-muted); }
+    .status-chip.ok { background: rgba(32,118,78,.28); color: #7fe0ab; }
+    .status-chip.err { background: rgba(224,17,25,.28); color: #ff9195; }
+    .timing { font: 12px/1 var(--mono); color: var(--console-muted); }
+    .response-body { margin: 0; padding: 16px; max-height: 320px; overflow: auto; background: var(--console-surface); border: 1px solid var(--console-border); border-top: 0; color: var(--console-text); font: 12.5px/1.6 var(--mono); border-radius: 0 0 4px 4px; white-space: pre-wrap; word-break: break-word; }
+    .response-body .jk { color: #ffb454; } .response-body .js { color: #8fd6a8; } .response-body .jn { color: #7ec8e3; } .response-body .jb { color: #d9a8ff; } .response-body .jz { color: #9c8a72; }
+    .view-record-btn { margin-top: 12px; border: 1.5px solid var(--accent); border-radius: 4px; background: transparent; color: #ffb454; padding: 9px 14px; font-weight: 750; font-size: 12px; }
+    .view-record-btn:hover { background: rgba(250,148,12,.14); }
+
+    .console-sidebar { background: var(--console-bg); border: 1px solid var(--console-border); border-radius: var(--radius); padding: 16px; }
+    .console-sidebar h2 { color: #fff6ea; font: 700 15px/1.2 var(--serif); margin-bottom: 10px; }
+    .history-list { display: grid; gap: 6px; max-height: 300px; overflow-y: auto; margin-bottom: 6px; }
+    .history-item { display: grid; grid-template-columns: auto 1fr; gap: 3px 8px; text-align: left; width: 100%; border: 1px solid var(--console-border); border-radius: 4px; background: var(--console-surface); padding: 8px 10px; }
+    .history-item:hover { border-color: var(--accent); }
+    .h-status { font: 800 10px/1 var(--mono); padding: 2px 6px; border-radius: 3px; background: #33261a; color: var(--console-muted); }
+    .h-status.ok { background: rgba(32,118,78,.28); color: #7fe0ab; }
+    .h-status.err { background: rgba(224,17,25,.28); color: #ff9195; }
+    .h-url { color: var(--console-text); font: 11px/1.3 var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .h-time { grid-column: 1 / -1; color: #6b5b45; font: 10px/1 var(--mono); }
+    .history-empty { padding: 14px 10px; text-align: center; color: var(--console-muted); font-size: 12px; border: 1px dashed var(--console-border); border-radius: 4px; }
+    .scenario-box { margin-top: 16px; border-top: 1px dashed var(--console-border); padding-top: 14px; }
+    .scenario-box summary { list-style: none; cursor: pointer; color: #ffb454; font-size: 12.5px; font-weight: 800; }
+    .scenario-box summary::-webkit-details-marker { display: none; }
+    .scenario-box p { margin: 8px 0 8px; color: var(--console-muted); font-size: 11.5px; }
+    .scenario-box select { width: 100%; background: var(--console-surface); border: 1px solid var(--console-border); border-radius: 4px; color: var(--console-text); padding: 8px 9px; font-size: 12.5px; }
+
+    /* ---- Record detail modal ---- */
+    .modal-backdrop { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(20,12,4,.6); padding: 20px; }
+    .modal-backdrop[hidden] { display: none; }
+    .modal { width: min(480px, 100%); max-height: 84vh; overflow-y: auto; background: var(--console-bg); border: 1px solid var(--console-border); border-radius: var(--radius); padding: 24px; }
+    .modal h2 { color: #fff6ea; font: 700 19px/1.2 var(--serif); margin-bottom: 4px; }
+    .modal > p { color: var(--console-muted); font-size: 12.5px; margin-bottom: 14px; }
+    .record-card { background: var(--console-surface); border: 1px solid var(--console-border); border-radius: 4px; padding: 14px 16px; margin-bottom: 10px; }
+    .record-num { font: 700 13px/1.2 var(--mono); color: #ffb454; margin-bottom: 3px; }
+    .record-name { font: 700 15px/1.2 var(--serif); color: #fff6ea; margin-bottom: 8px; }
+    .record-card dl { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 0; }
+    .record-card dt { font: 700 10px/1 var(--mono); text-transform: uppercase; color: var(--console-muted); margin-bottom: 2px; }
+    .record-card dd { margin: 0; color: var(--console-text); font-size: 13px; }
+    .modal-close { margin-top: 6px; width: 100%; border: 0; border-radius: 4px; background: var(--accent); color: #241608; font-weight: 800; padding: 11px; }
+    .modal-close:hover { background: #ffb339; }
+
+    .workspace { margin-top: 44px; }
+    .workspace-tab { display: inline-flex; align-items: center; gap: 10px; background: var(--deep); color: #fff6ea; padding: 9px 18px; border-radius: 6px 6px 0 0; font: 700 12.5px/1 var(--mono); }
+    .workspace-tab .count-badge { background: var(--accent); color: #241608; padding: 2px 8px; border-radius: 999px; font-weight: 800; }
+    .workspace-body { background: var(--paper); border: 1px solid var(--line); border-radius: 0 10px 10px 10px; }
+    .workspace-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--soft-line); }
+    .workspace-toolbar p { margin: 0; color: var(--muted); font-size: 12.5px; }
+    .workspace-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .btn { border: 1px solid var(--line); border-radius: 5px; background: white; color: var(--deep); padding: 8px 13px; font-size: 13px; font-weight: 750; }
+    .btn:hover { background: var(--mint-2); border-color: var(--accent); }
+    .btn.primary { background: var(--deep); color: white; border-color: var(--deep); }
+    .btn.primary:hover { background: var(--deep-2); }
+    .notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 18px 20px 0; }
+    .notes-grid textarea { min-height: 92px; resize: vertical; width: 100%; border: 1px solid #d9c3a6; border-radius: 8px; padding: 11px 12px; }
+    .notes-grid textarea:focus { outline: 0; border-color: var(--focus); box-shadow: 0 0 0 3px rgba(200,118,10,.15); }
+    label { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 750; color: #3d2b18; }
+    input, select, textarea { border: 1px solid #d9c3a6; border-radius: 8px; }
+    .tester-row input, .icon-btn { border-radius: 8px; }
+    .tester-row input { padding: 10px 12px; background: white; color: var(--ink); }
+    .test-list { padding: 18px 20px 22px; }
+    .test-list-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .test-list-head h3 { margin: 0; color: var(--deep); font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+    .count { color: var(--muted); font-size: 12px; }
+    .test-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+    table { width: 100%; min-width: 850px; border-collapse: collapse; }
+    th { padding: 10px; text-align: left; color: var(--muted); background: #faf1e2; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+    td { padding: 8px; border-top: 1px solid var(--soft-line); vertical-align: top; }
+    td:first-child { width: 40px; color: var(--muted); text-align: center; padding-top: 18px; font-weight: 700; font-family: var(--mono); }
+    .cell-input { min-height: 40px; padding: 9px; border: 1px solid transparent; background: transparent; border-radius: 6px; width: 100%; }
+    .cell-input:hover { border-color: var(--line); background: white; }
+    .cell-input:focus { background: white; outline: 0; border-color: var(--focus); }
+    .priority-select { min-width: 96px; }
+    .remove-row { border: 0; background: transparent; color: #9c8873; font-size: 18px; padding: 7px; border-radius: 6px; }
+    .remove-row:hover { color: var(--danger); background: var(--danger-soft); }
+    .empty-note { padding: 24px; text-align: center; color: var(--muted); }
+
+    .toast-region { position: fixed; right: 20px; bottom: 20px; z-index: 50; display: grid; gap: 10px; }
+    .toast { width: min(380px, calc(100vw - 40px)); padding: 14px 16px; border-radius: 8px; color: var(--ink); background: white; border: 1px solid var(--line); box-shadow: 0 18px 45px rgba(72,39,15,.22); animation: toast-in .22s ease-out; }
+    .toast strong { display: block; color: var(--deep); margin-bottom: 2px; }
+    .toast.success { border-left: 5px solid var(--success); }
+    .toast.error { border-left: 5px solid var(--danger); }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(10px); } }
+
+    @media (max-width: 980px) {
+      .console { grid-template-columns: 1fr; }
+      .brief-split { grid-template-columns: 1fr; }
+      .notes-grid { grid-template-columns: 1fr; }
+      .record-card dl { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 620px) {
+      .shell { width: min(100% - 20px, 1260px); margin-top: 18px; }
+      .topbar, .status-line { padding-inline: 12px; }
+      .brand-sub { display: none; }
+      .icon-btn { padding: 8px 14px; }
+      .brief-assignment, .brief-specs { padding: 22px 20px; }
+      .scope-grid { grid-template-columns: 1fr; }
+      .workspace-actions { justify-content: flex-start; }
+      .notes-grid, .test-list, .workspace-toolbar { padding-left: 15px; padding-right: 15px; }
+      h1 { font-size: 32px; }
+      .params-table, .params-table tbody, .params-table tr, .params-table td { display: block; width: 100%; }
+      .params-table td { padding: 4px 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <img src="data:image/png;base64,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" alt="VASUP">
+      </div>
+      <div>
+        <div class="brand-title">VASUP API Console</div>
+        <div class="brand-sub">QA interview environment</div>
+      </div>
+    </div>
+  </header>
+  <div class="status-line" aria-hidden="true"><strong>ENV</strong> sandbox<span class="sep">·</span>BASE https://api.vasup.co.th<span class="sep">·</span>AUTH none (test build)<span class="sep">·</span>no requests leave this browser tab</div>
+
+  <main class="shell">
+    <section class="intro" aria-labelledby="pageTitle">
+      <p class="eyebrow">Interview exercise · 10 minutes</p>
+      <h1 id="pageTitle">Account lookup API test design</h1>
+      <p class="intro-copy">A new backend endpoint, <code>GET /account/info</code>, is close to shipping. There's no UI to click through — build requests directly against the parameters below and inspect the simulated JSON response, the same way you would in Postman or with curl. This is a sandbox; no real network call is made.</p>
+      <div class="tester-row">
+        <label for="testerName">Tester name</label>
+        <input id="testerName" type="text" placeholder="Enter your name" autocomplete="name">
+      </div>
+      <div class="timer-bar">
+        <div class="timer" id="timerWrap" aria-label="Exercise timer">
+          <span class="timer-dot" aria-hidden="true"></span>
+          <span class="timer-label">Time remaining</span>
+          <strong id="timerText">10:00</strong>
+        </div>
+        <div class="timer-controls">
+          <button class="icon-btn" id="timerButton" type="button">Start</button>
+          <button class="icon-btn" id="resetButton" type="button">Reset</button>
+        </div>
+      </div>
+    </section>
+
+    <details class="brief-panel" open>
+      <summary class="brief-summary">
+        <span>Candidate brief &amp; acceptance context</span>
+        <span>Collapse / expand</span>
+      </summary>
+      <div class="brief-split">
+        <div class="brief-assignment">
+          <h2>Your assignment</h2>
+          <p>Design test cases for the account lookup endpoint against the parameter table on the right. Use the console below to issue requests and read the simulated responses.</p>
+          <ol>
+            <li>Explore every parameter combination: mandatory-only, mandatory + each optional field, and all four together.</li>
+            <li>Cover positive, negative, boundary, accessibility, security, and reliability scenarios.</li>
+            <li>Record clear steps / test data and expected results in the workspace below. Prioritize by risk.</li>
+            <li>Be ready to explain what you'd automate at which layer — unit, API/contract, or UI — and why.</li>
+          </ol>
+        </div>
+        <div class="brief-specs">
+          <h2>Product context — API spec</h2>
+          <div class="scope-grid">
+            <div class="scope-item"><strong>GET /account/info</strong><span>Read-only lookup, no side effects, safe to repeat.</span></div>
+            <div class="scope-item"><strong>firstName, lastName</strong><span>Mandatory · String · Exact match</span></div>
+            <div class="scope-item"><strong>accountNum, accountType</strong><span>Optional · accountNum is a 10-digit number; accountType is one of All, Fixed, Saving, Current</span></div>
+            <div class="scope-item"><strong>Response</strong><span>JSON list of matching accounts. Empty list when nothing matches (404 vs. 200+[] is unconfirmed).</span></div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <section class="console" aria-label="Account lookup API sandbox">
+      <div class="console-main">
+        <div class="request-bar">
+          <span class="method-chip">GET</span>
+          <code class="request-url" id="requestUrl">/account/info</code>
+          <button class="send-btn" id="sendBtn" type="button">Send ▸</button>
+        </div>
+        <div class="params-panel">
+          <div class="params-head">Query parameters</div>
+          <table class="params-table">
+            <thead><tr><th>Key</th><th>Required</th><th>Value</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><code>accountNum</code></td>
+                <td><span class="req-chip optional">optional</span></td>
+                <td>
+                  <div class="field">
+                    <label class="sr-only" for="paramAccountNum">accountNum parameter value</label>
+                    <input id="paramAccountNum" inputmode="numeric" placeholder="10 digits" maxlength="10">
+                    <div class="field-error" id="accountNumError">accountNum must be exactly 10 digits.</div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><code>firstName</code></td>
+                <td><span class="req-chip mandatory">mandatory</span></td>
+                <td>
+                  <div class="field">
+                    <label class="sr-only" for="paramFirstName">firstName parameter value</label>
+                    <input id="paramFirstName" placeholder="e.g. Prayuth">
+                    <div class="field-error" id="firstNameError">firstName is required.</div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><code>lastName</code></td>
+                <td><span class="req-chip mandatory">mandatory</span></td>
+                <td>
+                  <div class="field">
+                    <label class="sr-only" for="paramLastName">lastName parameter value</label>
+                    <input id="paramLastName" placeholder="e.g. Chanarcha">
+                    <div class="field-error" id="lastNameError">lastName is required.</div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><code>accountType</code></td>
+                <td><span class="req-chip optional">optional</span></td>
+                <td>
+                  <div class="field">
+                    <label class="sr-only" for="paramAccountType">accountType parameter value</label>
+                    <select id="paramAccountType">
+                      <option value="">(omit param)</option>
+                      <option value="All">All</option>
+                      <option value="Fixed">Fixed</option>
+                      <option value="Saving">Saving</option>
+                      <option value="Current">Current</option>
+                    </select>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="response-panel">
+          <div class="response-tabs" role="tablist" aria-label="Response view">
+            <button role="tab" id="tab-body" aria-selected="true" aria-controls="panel-body" data-tab="body" type="button">Body</button>
+            <button role="tab" id="tab-headers" aria-selected="false" aria-controls="panel-headers" data-tab="headers" type="button">Headers</button>
+            <button role="tab" id="tab-curl" aria-selected="false" aria-controls="panel-curl" data-tab="curl" type="button">cURL</button>
+          </div>
+          <div class="response-meta">
+            <span class="status-chip" id="statusChip">—</span>
+            <span class="timing" id="timingValue">–– ms</span>
+          </div>
+          <pre class="response-body" id="responseBody" role="tabpanel" aria-labelledby="tab-body">// Click Send to issue a request.</pre>
+          <pre class="response-body" id="responseHeaders" role="tabpanel" aria-labelledby="tab-headers" hidden></pre>
+          <pre class="response-body" id="responseCurl" role="tabpanel" aria-labelledby="tab-curl" hidden></pre>
+          <button class="view-record-btn" id="viewRecordBtn" type="button" hidden>View matched record(s)</button>
+        </div>
+      </div>
+
+      <aside class="console-sidebar" aria-label="Request history and scenario controls">
+        <h2>Request history</h2>
+        <div class="history-list" id="historyList"></div>
+        <div class="history-empty" id="historyEmpty">No requests sent yet this session.</div>
+        <details class="scenario-box">
+          <summary>Interviewer scenario controls</summary>
+          <p>Applies to the next request that is sent.</p>
+          <label for="scenario" class="sr-only">Outcome</label>
+          <select id="scenario">
+            <option value="normal">Normal (use dataset as configured)</option>
+            <option value="duplicate">Force duplicate exact-match records</option>
+            <option value="serverError">Server error (500)</option>
+            <option value="rateLimited">Rate limited (429)</option>
+            <option value="timeout">Network timeout</option>
+          </select>
+        </details>
+      </aside>
+    </section>
+
+    <section class="workspace" aria-labelledby="workspaceTitle">
+      <div class="workspace-tab">// candidate-test-cases.spec <span class="count-badge" id="caseCount">0</span></div>
+      <div class="workspace-body">
+        <div class="workspace-toolbar">
+          <div><h2 id="workspaceTitle" class="sr-only">Candidate test case workspace</h2><p>Your notes save automatically in this browser. Export your work before resetting.</p></div>
+          <div class="workspace-actions">
+            <button class="btn" id="addCase" type="button">+ Add test case</button>
+            <button class="btn" id="clearCases" type="button">Clear</button>
+            <button class="btn primary" id="exportCases" type="button">Export CSV</button>
+          </div>
+        </div>
+        <div class="notes-grid">
+          <div><label for="riskNotes">Risks &amp; assumptions</label><textarea id="riskNotes" placeholder="What is unclear about the spec? What's the worst thing a caller of this endpoint could do?"></textarea></div>
+          <div><label for="automationNotes">Automation approach</label><textarea id="automationNotes" placeholder="What would you automate at unit, API/contract, or UI level — and why?"></textarea></div>
+        </div>
+        <div class="test-list">
+          <div class="test-list-head"><h3>Test cases</h3><span class="count" id="caseCountLabel">0 cases</span></div>
+          <div class="test-table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Test scenario</th><th>Steps / test data</th><th>Expected result</th><th>Priority</th><th><span class="sr-only">Remove</span></th></tr></thead>
+              <tbody id="caseRows"></tbody>
+            </table>
+            <div class="empty-note" id="emptyNote">No cases yet. Add a test case to begin.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+
+  <div class="modal-backdrop" id="recordModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="recordModalTitle">
+      <h2 id="recordModalTitle">Matched record(s)</h2>
+      <p>Simulated data returned by the last request.</p>
+      <div id="recordCards"></div>
+      <button class="modal-close" id="closeRecordModal" type="button">Close</button>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+      const storageKey = 'qa-account-info-api-interview-v1';
+      let timerSeconds = 10 * 60;
+      let timerId = null;
+      let cases = [];
+
+      const records = [
+        { accountNum: '1234567890', firstName: 'Prayuth',       lastName: 'Chanarcha', accountType: 'Saving',  balance: 152340.50, status: 'Active'  },
+        { accountNum: '2345678901', firstName: 'Prayuth',       lastName: 'Sae-lee',   accountType: 'Current', balance: 8420.00,   status: 'Active'  },
+        { accountNum: '3456789012', firstName: 'Somchai',       lastName: 'Boonmee',   accountType: 'Fixed',   balance: 500000.00, status: 'Active'  },
+        { accountNum: '4567890123', firstName: 'Somchainarong', lastName: 'Boonmee',   accountType: 'Current', balance: 3200.75,   status: 'Active'  },
+        { accountNum: '5678901234', firstName: 'Nisa',          lastName: 'Wattana',   accountType: 'Saving',  balance: 12000.00,  status: 'Dormant' },
+        { accountNum: '6789012345', firstName: 'Anong',         lastName: 'Phong',     accountType: 'Current', balance: 0.00,      status: 'Closed'  },
+        { accountNum: '7890123456', firstName: 'Kittipong',     lastName: 'Rattana',   accountType: 'Fixed',   balance: 75000.00,  status: 'Active'  },
+        { accountNum: '8901234567', firstName: 'Waraporn',      lastName: 'Intharak',  accountType: 'Saving',  balance: 26890.20,  status: 'Active'  }
+      ];
+
+      let sending = false;
+      let history = [];
+      let lastResults = [];
+
+      function showToast(title, message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<strong></strong><span></span>`;
+        $('strong', toast).textContent = title;
+        $('span', toast).textContent = message;
+        $('#toastRegion').appendChild(toast);
+        setTimeout(() => toast.remove(), 4300);
+      }
+
+      function cap(name) { return name[0].toUpperCase() + name.slice(1); }
+
+      const validators = {
+        firstName: v => v.trim().length > 0,
+        lastName: v => v.trim().length > 0,
+        // NOTE: spec says accountNum must be exactly 10 digits, but this regex allows 1-10 digits
+        accountNum: v => v === '' || /^\d{1,10}$/.test(v)
+      };
+      function validateField(name) {
+        const input = $(`#param${cap(name)}`);
+        const valid = validators[name](input.value);
+        input.setAttribute('aria-invalid', String(!valid));
+        input.closest('.field').classList.toggle('has-error', !valid);
+        return valid;
+      }
+      ['accountNum', 'firstName', 'lastName'].forEach(name => {
+        const input = $(`#param${cap(name)}`);
+        input.addEventListener('blur', () => validateField(name));
+        input.addEventListener('input', () => {
+          if (input.getAttribute('aria-invalid') === 'true') validateField(name);
+          renderUrl();
+        });
+      });
+      $('#paramAccountType').addEventListener('change', renderUrl);
+
+      function currentParams() {
+        return {
+          accountNum: $('#paramAccountNum').value.trim(),
+          firstName: $('#paramFirstName').value.trim(),
+          lastName: $('#paramLastName').value.trim(),
+          accountType: $('#paramAccountType').value
+        };
+      }
+      function buildUrl(params) {
+        const qs = [];
+        if (params.accountNum) qs.push('accountNum=' + encodeURIComponent(params.accountNum));
+        if (params.firstName) qs.push('firstName=' + encodeURIComponent(params.firstName));
+        if (params.lastName) qs.push('lastName=' + encodeURIComponent(params.lastName));
+        if (params.accountType) qs.push('accountType=' + encodeURIComponent(params.accountType));
+        return '/account/info' + (qs.length ? '?' + qs.join('&') : '');
+      }
+      function renderUrl() {
+        $('#requestUrl').textContent = buildUrl(currentParams());
+        updateCurl();
+      }
+      function updateCurl() {
+        const url = 'https://api.vasup.co.th' + buildUrl(currentParams());
+        $('#responseCurl').textContent = `curl '${url}' \\\n  -H 'Accept: application/json'`;
+      }
+
+      function matchesName(recordValue, queryValue) {
+        // NOTE: spec requires an exact match; this does a case-insensitive substring match instead
+        return recordValue.toLowerCase().includes(queryValue.toLowerCase());
+      }
+      function matchesType(record, queryType) {
+        if (!queryType) return true;
+        // NOTE: when accountType=All is passed explicitly, it should act as a wildcard (per spec, 'All' is a
+        // documented value), but this compares literally against the record's type, which never equals 'All'
+        return record.accountType === queryType;
+      }
+      function search(params) {
+        // NOTE: firstName/lastName are Mandatory per spec, but there is no check that they were supplied at
+        // all — each filter only applies "if present", so an absent mandatory field is silently ignored
+        // instead of causing a 400, and omitting both returns the entire dataset.
+        return records.filter(r => {
+          if (params.firstName && !matchesName(r.firstName, params.firstName)) return false;
+          if (params.lastName && !matchesName(r.lastName, params.lastName)) return false;
+          if (params.accountNum && r.accountNum !== params.accountNum) return false;
+          if (!matchesType(r, params.accountType)) return false;
+          return true;
+        });
+      }
+      function altAccountNum(num) { return num.slice(0, 9) + (num.slice(-1) === '0' ? '1' : '0'); }
+
+      function buildResponse(params, scenario) {
+        if (scenario === 'serverError') {
+          return { status: 500, statusText: 'Internal Server Error', body: { error: 'Internal Server Error', message: 'Unexpected error while processing the request.' } };
+        }
+        if (scenario === 'rateLimited') {
+          return { status: 429, statusText: 'Too Many Requests', body: { error: 'Too Many Requests', message: 'Rate limit exceeded. Retry after 30s.' } };
+        }
+        if (scenario === 'timeout') {
+          return { status: null, statusText: 'Timeout', timeout: true, body: null };
+        }
+        let results = search(params);
+        if (scenario === 'duplicate' && results.length === 1) {
+          const dup = Object.assign({}, results[0], { accountNum: altAccountNum(results[0].accountNum) });
+          results = [results[0], dup];
+        }
+        return { status: 200, statusText: 'OK', body: { status: 200, count: results.length, results } };
+      }
+
+      function escapeHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      function syntaxHighlightJson(value) {
+        const str = escapeHtml(JSON.stringify(value, null, 2));
+        return str.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\btrue\b|\bfalse\b|\bnull\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g, match => {
+          let cls = 'jn';
+          if (/^"/.test(match)) cls = /:$/.test(match) ? 'jk' : 'js';
+          else if (/true|false/.test(match)) cls = 'jb';
+          else if (/null/.test(match)) cls = 'jz';
+          return `<span class="${cls}">${match}</span>`;
+        });
+      }
+
+      function statusClass(response) {
+        if (response.timeout) return 'err';
+        return response.status < 300 ? 'ok' : 'err';
+      }
+      function renderHeaders(response, elapsedMs) {
+        const lines = [];
+        lines.push(response.timeout ? 'HTTP/1.1 (no response)' : `HTTP/1.1 ${response.status} ${response.statusText}`);
+        if (!response.timeout) {
+          lines.push('Content-Type: application/json; charset=utf-8');
+          lines.push('X-Request-Id: req_' + Math.random().toString(16).slice(2, 10));
+          if (response.status === 429) lines.push('Retry-After: 30');
+          else lines.push('X-RateLimit-Remaining: ' + Math.max(0, 57 - history.length));
+        }
+        lines.push('X-Response-Time: ' + elapsedMs + 'ms');
+        $('#responseHeaders').textContent = lines.join('\n');
+      }
+      function renderResponse(response, elapsedMs) {
+        const chip = $('#statusChip');
+        chip.textContent = response.timeout ? 'TIMEOUT' : `${response.status} ${response.statusText}`;
+        chip.className = 'status-chip ' + statusClass(response);
+        $('#timingValue').textContent = response.timeout ? `${elapsedMs} ms (aborted)` : `${elapsedMs} ms`;
+        if (response.timeout) {
+          $('#responseBody').textContent = `// Request timed out after ${elapsedMs}ms\n// No response received from the server.`;
+        } else {
+          $('#responseBody').innerHTML = syntaxHighlightJson(response.body);
+        }
+        renderHeaders(response, elapsedMs);
+        lastResults = (response.status === 200 && response.body && response.body.results) ? response.body.results : [];
+        $('#viewRecordBtn').hidden = lastResults.length === 0;
+      }
+
+      function setResponseTab(tab) {
+        $$('.response-tabs [role="tab"]').forEach(btn => btn.setAttribute('aria-selected', String(btn.dataset.tab === tab)));
+        $('#responseBody').hidden = tab !== 'body';
+        $('#responseHeaders').hidden = tab !== 'headers';
+        $('#responseCurl').hidden = tab !== 'curl';
+      }
+      $$('.response-tabs [role="tab"]').forEach((btn, i, arr) => {
+        btn.addEventListener('click', () => setResponseTab(btn.dataset.tab));
+        btn.addEventListener('keydown', event => {
+          if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+          event.preventDefault();
+          const next = event.key === 'ArrowRight' ? (i + 1) % arr.length : (i - 1 + arr.length) % arr.length;
+          arr[next].focus();
+          setResponseTab(arr[next].dataset.tab);
+        });
+      });
+
+      function renderHistory() {
+        const list = $('#historyList');
+        list.innerHTML = '';
+        history.forEach(entry => {
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'history-item';
+          const statusText = entry.response.timeout ? 'TIMEOUT' : entry.response.status;
+          row.innerHTML = `<span class="h-status ${statusClass(entry.response)}">${statusText}</span><span class="h-url"></span><span class="h-time"></span>`;
+          $('.h-url', row).textContent = entry.url;
+          $('.h-time', row).textContent = entry.time;
+          row.addEventListener('click', () => {
+            $('#paramAccountNum').value = entry.params.accountNum;
+            $('#paramFirstName').value = entry.params.firstName;
+            $('#paramLastName').value = entry.params.lastName;
+            $('#paramAccountType').value = entry.params.accountType;
+            renderUrl();
+            renderResponse(entry.response, entry.elapsedMs);
+          });
+          list.appendChild(row);
+        });
+        $('#historyEmpty').hidden = history.length > 0;
+      }
+      function addHistory(params, response, elapsedMs) {
+        history.unshift({ id: 'REQ-' + (1000 + history.length), time: new Date().toLocaleTimeString('en-GB'), params, response, elapsedMs, url: buildUrl(params) });
+        renderHistory();
+      }
+
+      function handleSend() {
+        if (sending) return;
+        validateField('firstName');
+        validateField('lastName');
+        validateField('accountNum');
+        // NOTE: validation above is cosmetic only — invalid/missing mandatory fields do not block Send
+        const params = currentParams();
+        renderUrl();
+        sending = true;
+        $('#sendBtn').disabled = true;
+        $('#sendBtn').textContent = 'Sending…';
+        const scenario = $('#scenario').value;
+        const delay = scenario === 'timeout' ? 3200 : 420 + Math.random() * 380;
+        const startedAt = performance.now();
+        setTimeout(() => {
+          const elapsedMs = Math.round(performance.now() - startedAt);
+          const response = buildResponse(params, scenario);
+          renderResponse(response, elapsedMs);
+          addHistory(params, response, elapsedMs);
+          sending = false;
+          $('#sendBtn').disabled = false;
+          $('#sendBtn').textContent = 'Send ▸';
+        }, delay);
+      }
+      $('#sendBtn').addEventListener('click', handleSend);
+
+      function maskAccountNum(num) { return '•••••' + num.slice(-5); }
+      $('#viewRecordBtn').addEventListener('click', () => {
+        const wrap = $('#recordCards');
+        wrap.innerHTML = '';
+        lastResults.forEach(r => {
+          const card = document.createElement('div');
+          card.className = 'record-card';
+          card.innerHTML = `<div class="record-num"></div><div class="record-name"></div><dl><div><dt>Type</dt><dd class="d-type"></dd></div><div><dt>Balance</dt><dd class="d-balance"></dd></div><div><dt>Status</dt><dd class="d-status"></dd></div></dl>`;
+          $('.record-num', card).textContent = maskAccountNum(r.accountNum);
+          $('.record-name', card).textContent = `${r.firstName} ${r.lastName}`;
+          $('.d-type', card).textContent = r.accountType;
+          $('.d-balance', card).textContent = '฿' + r.balance.toLocaleString('en-US', { minimumFractionDigits: 2 });
+          $('.d-status', card).textContent = r.status;
+          wrap.appendChild(card);
+        });
+        $('#recordModal').hidden = false;
+        $('#closeRecordModal').focus();
+      });
+      $('#closeRecordModal').addEventListener('click', () => { $('#recordModal').hidden = true; $('#viewRecordBtn').focus(); });
+      $('#recordModal').addEventListener('click', event => { if (event.target === event.currentTarget) $('#closeRecordModal').click(); });
+      document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('#recordModal').hidden) $('#closeRecordModal').click(); });
+
+      function updateTimer() {
+        const mins = Math.floor(timerSeconds / 60);
+        const secs = timerSeconds % 60;
+        $('#timerText').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        document.title = `${$('#timerText').textContent} · QA Account Lookup API Exercise`;
+        if (timerSeconds === 0) {
+          clearInterval(timerId); timerId = null;
+          $('#timerButton').textContent = 'Restart';
+          $('#timerWrap').classList.remove('running');
+          showToast('Time is up', 'Finish the current thought and prepare to discuss your approach.', 'error');
+        }
+      }
+      $('#timerButton').addEventListener('click', () => {
+        if (timerSeconds === 0) timerSeconds = 10 * 60;
+        if (timerId) {
+          clearInterval(timerId); timerId = null; $('#timerButton').textContent = 'Resume'; $('#timerWrap').classList.remove('running');
+        } else {
+          timerId = setInterval(() => { timerSeconds -= 1; updateTimer(); }, 1000);
+          $('#timerButton').textContent = 'Pause'; $('#timerWrap').classList.add('running');
+        }
+        updateTimer();
+      });
+      $('#resetButton').addEventListener('click', () => {
+        if (!confirm('Reset the API console (request builder, history, timer)? Your test case workspace will be kept.')) return;
+        $('#paramAccountNum').value = ''; $('#paramFirstName').value = ''; $('#paramLastName').value = ''; $('#paramAccountType').value = '';
+        $$('.field').forEach(field => field.classList.remove('has-error'));
+        $$('[aria-invalid]').forEach(input => input.removeAttribute('aria-invalid'));
+        $('#scenario').value = 'normal';
+        history = []; renderHistory();
+        renderUrl();
+        $('#responseBody').textContent = '// Click Send to issue a request.';
+        $('#responseHeaders').textContent = '';
+        $('#statusChip').textContent = '—'; $('#statusChip').className = 'status-chip';
+        $('#timingValue').textContent = '–– ms';
+        $('#viewRecordBtn').hidden = true;
+        setResponseTab('body');
+        clearInterval(timerId); timerId = null; timerSeconds = 10 * 60; $('#timerButton').textContent = 'Start'; $('#timerWrap').classList.remove('running'); updateTimer();
+      });
+
+      function saveWorkspace() {
+        const data = { cases, testerName: $('#testerName').value, riskNotes: $('#riskNotes').value, automationNotes: $('#automationNotes').value };
+        try { localStorage.setItem(storageKey, JSON.stringify(data)); } catch (_) {}
+      }
+      function escapeCsv(value) { return `"${String(value ?? '').replace(/"/g, '""')}"`; }
+      function renderCases() {
+        const body = $('#caseRows');
+        body.innerHTML = '';
+        cases.forEach((item, index) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${index + 1}</td>
+            <td><input class="cell-input" data-key="scenario" aria-label="Test scenario ${index + 1}" placeholder="e.g. accountType=All returns zero results"></td>
+            <td><textarea class="cell-input" data-key="steps" aria-label="Steps and data ${index + 1}" rows="2" placeholder="Steps and test data"></textarea></td>
+            <td><textarea class="cell-input" data-key="expected" aria-label="Expected result ${index + 1}" rows="2" placeholder="Observable expected result"></textarea></td>
+            <td><select class="cell-input priority-select" data-key="priority" aria-label="Priority ${index + 1}"><option>High</option><option>Medium</option><option>Low</option></select></td>
+            <td><button class="remove-row" type="button" aria-label="Remove test case ${index + 1}" title="Remove">×</button></td>`;
+          $$('[data-key]', row).forEach(input => {
+            input.value = item[input.dataset.key] || '';
+            input.addEventListener('input', () => { cases[index][input.dataset.key] = input.value; saveWorkspace(); });
+          });
+          $('.remove-row', row).addEventListener('click', () => { cases.splice(index, 1); renderCases(); saveWorkspace(); });
+          body.appendChild(row);
+        });
+        $('#emptyNote').hidden = cases.length > 0;
+        $('#caseCountLabel').textContent = `${cases.length} ${cases.length === 1 ? 'case' : 'cases'}`;
+        $('#caseCount').textContent = String(cases.length);
+      }
+      function addCase(focus = true) {
+        cases.push({ scenario: '', steps: '', expected: '', priority: 'High' });
+        renderCases(); saveWorkspace();
+        if (focus) $$('[data-key="scenario"]')[cases.length - 1]?.focus();
+      }
+      $('#addCase').addEventListener('click', () => addCase());
+      $('#clearCases').addEventListener('click', () => {
+        if (cases.length && !confirm('Clear all test cases and notes?')) return;
+        cases = []; $('#testerName').value = ''; $('#riskNotes').value = ''; $('#automationNotes').value = ''; renderCases(); saveWorkspace();
+      });
+      ['testerName', 'riskNotes', 'automationNotes'].forEach(id => $(`#${id}`).addEventListener('input', saveWorkspace));
+      $('#exportCases').addEventListener('click', () => {
+        const header = ['No.', 'Test scenario', 'Steps / test data', 'Expected result', 'Priority'];
+        const rows = cases.map((item, i) => [i + 1, item.scenario, item.steps, item.expected, item.priority]);
+        rows.push([], ['Tester name', $('#testerName').value], ['Risks & assumptions', $('#riskNotes').value], ['Automation approach', $('#automationNotes').value]);
+        const csv = [header, ...rows].map(row => row.map(escapeCsv).join(',')).join('\r\n');
+        const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob); link.download = 'qa-account-info-api-test-cases.csv'; link.click();
+        URL.revokeObjectURL(link.href);
+        showToast('CSV exported', 'Your test cases were downloaded.');
+      });
+
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+        if (saved) {
+          cases = Array.isArray(saved.cases) ? saved.cases : [];
+          $('#testerName').value = saved.testerName || '';
+          $('#riskNotes').value = saved.riskNotes || '';
+          $('#automationNotes').value = saved.automationNotes || '';
+        }
+      } catch (_) {}
+      renderCases();
+      saveWorkspace();
+      renderUrl();
+      renderHistory();
+      updateTimer();
+    })();
+  </script>
+</body>
+</html>
