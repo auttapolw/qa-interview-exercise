@@ -75,6 +75,10 @@
     .scope-item { padding: 12px 14px; border-radius: 5px; background: var(--console-surface); border: 1px solid var(--console-border); }
     .scope-item strong { display: block; margin-bottom: 3px; color: #ffb454; font: 700 12px/1.3 var(--mono); text-transform: none; }
     .scope-item span { color: var(--console-muted); font-size: 12px; }
+    .sample-response { margin-top: 14px; border: 1px solid var(--console-border); border-radius: 5px; overflow: hidden; }
+    .sample-response-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 14px; background: var(--console-surface-2); border-bottom: 1px solid var(--console-border); }
+    .sample-response-head span:first-child { font: 800 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--console-muted); }
+    .sample-response .response-body { border: 0; border-radius: 0; max-height: none; }
 
     /* ---- API console sandbox ---- */
     .console { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 22px; align-items: start; }
@@ -93,6 +97,7 @@
     .params-table th { text-align: left; padding: 0 10px 8px; font: 700 10px/1 var(--mono); text-transform: uppercase; letter-spacing: .06em; color: #7b6b52; }
     .params-table td { padding: 6px 10px; vertical-align: middle; }
     .params-table td:first-child code { color: #ffb454; font-weight: 700; font-size: 13px; }
+    .params-table td.condition-cell { color: var(--console-muted); font-size: 12px; line-height: 1.4; }
     .req-chip { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
     .req-chip.mandatory { background: rgba(224,17,25,.22); color: #ff9195; }
     .req-chip.optional { background: rgba(250,148,12,.18); color: #ffbf6b; }
@@ -274,9 +279,29 @@
           <h2>Product context — API spec</h2>
           <div class="scope-grid">
             <div class="scope-item"><strong>GET /account/info</strong><span>Read-only lookup, no side effects, safe to repeat.</span></div>
-            <div class="scope-item"><strong>firstName, lastName</strong><span>Mandatory · String · Exact match</span></div>
+            <div class="scope-item"><strong>firstName, lastName</strong><span>Mandatory · String · Exact match · supports Thai &amp; English</span></div>
             <div class="scope-item"><strong>accountNum, accountType</strong><span>Optional · accountNum is a 10-digit number; accountType is one of All, Fixed, Saving, Current</span></div>
-            <div class="scope-item"><strong>Response</strong><span>JSON list of matching accounts. Empty list when nothing matches (404 vs. 200+[] is unconfirmed).</span></div>
+            <div class="scope-item"><strong>Response shape</strong><span>Envelope object with <code>status</code>, <code>count</code>, and a <code>results</code> array. Empty array when nothing matches (404 vs. 200+[] is unconfirmed) — see the sample below.</span></div>
+          </div>
+          <div class="sample-response">
+            <div class="sample-response-head">
+              <span>Sample response</span>
+              <span class="status-chip ok">200 OK</span>
+            </div>
+            <pre class="response-body">{
+  <span class="jk">"status"</span>: <span class="jn">200</span>,
+  <span class="jk">"count"</span>: <span class="jn">1</span>,
+  <span class="jk">"results"</span>: [
+    {
+      <span class="jk">"accountNum"</span>: <span class="js">"9012345678"</span>,
+      <span class="jk">"firstName"</span>: <span class="js">"สมชาย"</span>,
+      <span class="jk">"lastName"</span>: <span class="js">"บุญมี"</span>,
+      <span class="jk">"accountType"</span>: <span class="js">"Fixed"</span>,
+      <span class="jk">"balance"</span>: <span class="jn">340000</span>,
+      <span class="jk">"status"</span>: <span class="js">"Active"</span>
+    }
+  ]
+}</pre>
           </div>
         </div>
       </div>
@@ -292,7 +317,7 @@
         <div class="params-panel">
           <div class="params-head">Query parameters</div>
           <table class="params-table">
-            <thead><tr><th>Key</th><th>Required</th><th>Value</th></tr></thead>
+            <thead><tr><th>Key</th><th>Required</th><th>Value</th><th>Condition</th></tr></thead>
             <tbody>
               <tr>
                 <td><code>accountNum</code></td>
@@ -304,6 +329,7 @@
                     <div class="field-error" id="accountNumError">accountNum must be exactly 10 digits.</div>
                   </div>
                 </td>
+                <td class="condition-cell">Exactly 10 digits</td>
               </tr>
               <tr>
                 <td><code>firstName</code></td>
@@ -311,10 +337,11 @@
                 <td>
                   <div class="field">
                     <label class="sr-only" for="paramFirstName">firstName parameter value</label>
-                    <input id="paramFirstName" placeholder="e.g. Prayuth">
+                    <input id="paramFirstName" placeholder="e.g. Somchai or สมชาย">
                     <div class="field-error" id="firstNameError">firstName is required.</div>
                   </div>
                 </td>
+                <td class="condition-cell">Exact match · supports Thai &amp; English</td>
               </tr>
               <tr>
                 <td><code>lastName</code></td>
@@ -322,10 +349,11 @@
                 <td>
                   <div class="field">
                     <label class="sr-only" for="paramLastName">lastName parameter value</label>
-                    <input id="paramLastName" placeholder="e.g. Chanarcha">
+                    <input id="paramLastName" placeholder="e.g. Boonmee or บุญมี">
                     <div class="field-error" id="lastNameError">lastName is required.</div>
                   </div>
                 </td>
+                <td class="condition-cell">Exact match · supports Thai &amp; English</td>
               </tr>
               <tr>
                 <td><code>accountType</code></td>
@@ -342,6 +370,7 @@
                     </select>
                   </div>
                 </td>
+                <td class="condition-cell">All, Fixed, Saving, Current</td>
               </tr>
             </tbody>
           </table>
@@ -440,7 +469,8 @@
         { accountNum: '5678901234', firstName: 'Nisa',          lastName: 'Wattana',   accountType: 'Saving',  balance: 12000.00,  status: 'Dormant' },
         { accountNum: '6789012345', firstName: 'Anong',         lastName: 'Phong',     accountType: 'Current', balance: 0.00,      status: 'Closed'  },
         { accountNum: '7890123456', firstName: 'Kittipong',     lastName: 'Rattana',   accountType: 'Fixed',   balance: 75000.00,  status: 'Active'  },
-        { accountNum: '8901234567', firstName: 'Waraporn',      lastName: 'Intharak',  accountType: 'Saving',  balance: 26890.20,  status: 'Active'  }
+        { accountNum: '8901234567', firstName: 'Waraporn',      lastName: 'Intharak',  accountType: 'Saving',  balance: 26890.20,  status: 'Active'  },
+        { accountNum: '9012345678', firstName: 'สมชาย',          lastName: 'บุญมี',      accountType: 'Fixed',   balance: 340000.00, status: 'Active'  }
       ];
 
       let sending = false;
