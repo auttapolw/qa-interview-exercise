@@ -229,22 +229,6 @@
     .btn.on-dark.primary:hover { background: #ffb339; }
     .notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 20px 24px 0; }
     .notes-grid textarea { min-height: 92px; resize: vertical; background-image: repeating-linear-gradient(transparent 0 27px, var(--soft-line) 27px 28px); background-position: 0 34px; }
-    .test-list { padding: 20px 24px 24px; }
-    .test-list-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
-    .test-list-head h3 { margin: 0; color: var(--deep); }
-    .count { color: var(--muted); font-size: 12px; }
-    .test-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
-    table { width: 100%; min-width: 850px; border-collapse: collapse; }
-    th { padding: 10px; text-align: left; color: var(--muted); background: #faf1e2; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
-    td { padding: 8px; border-top: 1px solid var(--soft-line); vertical-align: top; }
-    td:first-child { width: 40px; color: var(--muted); text-align: center; padding-top: 18px; font-weight: 700; }
-    .cell-input { min-height: 40px; padding: 9px; border-color: transparent; background: transparent; }
-    .cell-input:hover { border-color: var(--line); background: white; }
-    .cell-input:focus { background: white; }
-    .priority-select { min-width: 96px; }
-    .remove-row { border: 0; background: transparent; color: #9c8873; font-size: 18px; padding: 7px; border-radius: 8px; }
-    .remove-row:hover { color: var(--danger); background: var(--danger-soft); }
-    .empty-note { padding: 24px; text-align: center; color: var(--muted); }
 
     .toast-region { position: fixed; right: 20px; bottom: 20px; z-index: 50; display: grid; gap: 10px; }
     .toast { width: min(380px, calc(100vw - 40px)); padding: 14px 16px; border-radius: 13px; color: var(--ink); background: white; border: 1px solid var(--line); box-shadow: 0 18px 45px rgba(72,39,15,.22); animation: toast-in .22s ease-out; }
@@ -275,7 +259,7 @@
       .brief-assignment, .brief-specs { padding: 22px 20px; }
       .workspace-ribbon { flex-direction: column; }
       .workspace-actions { justify-content: flex-start; }
-      .notes-grid, .test-list { padding-left: 15px; padding-right: 15px; }
+      .notes-grid { padding-left: 15px; padding-right: 15px; }
       h1 { font-size: 32px; }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -448,9 +432,8 @@
 
     <section class="workspace" aria-labelledby="workspaceTitle">
       <div class="workspace-ribbon">
-        <div><h2 id="workspaceTitle">Candidate test case workspace</h2><p>Optional — talking through your scenarios out loud is enough. Anything you type here saves automatically; export before resetting.</p></div>
+        <div><h2 id="workspaceTitle">Candidate notes workspace</h2><p>Optional — talking through your scenarios out loud is enough. Anything you type here saves automatically; export before resetting.</p></div>
         <div class="workspace-actions">
-          <button class="btn on-dark" id="addCase" type="button">+ Add test case</button>
           <button class="btn on-dark" id="clearCases" type="button">Clear</button>
           <button class="btn on-dark primary" id="exportCases" type="button">Export CSV</button>
         </div>
@@ -459,16 +442,6 @@
         <div class="notes-grid">
           <div><label for="riskNotes">Risks &amp; assumptions</label><textarea id="riskNotes" placeholder="What is unclear? What could cause the greatest customer or business harm?"></textarea></div>
           <div><label for="automationNotes">Automation approach</label><textarea id="automationNotes" placeholder="What would you automate at unit, API, UI, or monitoring level—and why?"></textarea></div>
-        </div>
-        <div class="test-list">
-          <div class="test-list-head"><h3>Test cases</h3><span class="count" id="caseCount">0 cases</span></div>
-          <div class="test-table-wrap">
-            <table>
-              <thead><tr><th>#</th><th>Test scenario</th><th>Steps / test data</th><th>Expected result</th><th>Priority</th><th><span class="sr-only">Remove</span></th></tr></thead>
-              <tbody id="caseRows"></tbody>
-            </table>
-            <div class="empty-note" id="emptyNote">No cases yet. Add a test case to begin.</div>
-          </div>
         </div>
       </div>
     </section>
@@ -492,7 +465,6 @@
       const storageKey = 'qa-money-transfer-interview-v1';
       let timerSeconds = 5 * 60;
       let timerId = null;
-      let cases = [];
 
       let balance = 120000;
       let dailyTotal = 0;
@@ -693,57 +665,27 @@
       });
 
       function saveWorkspace() {
-        const data = { cases, testerName: $('#testerName').value, riskNotes: $('#riskNotes').value, automationNotes: $('#automationNotes').value };
+        const data = { testerName: $('#testerName').value, riskNotes: $('#riskNotes').value, automationNotes: $('#automationNotes').value };
         try { localStorage.setItem(storageKey, JSON.stringify(data)); } catch (_) {}
       }
       function escapeCsv(value) { return `"${String(value ?? '').replace(/"/g, '""')}"`; }
-      function renderCases() {
-        const body = $('#caseRows');
-        body.innerHTML = '';
-        cases.forEach((item, index) => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${index + 1}</td>
-            <td><input class="cell-input" data-key="scenario" aria-label="Test scenario ${index + 1}" placeholder="e.g. Exact ฿50,000 boundary"></td>
-            <td><textarea class="cell-input" data-key="steps" aria-label="Steps and data ${index + 1}" rows="2" placeholder="Steps and test data"></textarea></td>
-            <td><textarea class="cell-input" data-key="expected" aria-label="Expected result ${index + 1}" rows="2" placeholder="Observable expected result"></textarea></td>
-            <td><select class="cell-input priority-select" data-key="priority" aria-label="Priority ${index + 1}"><option>High</option><option>Medium</option><option>Low</option></select></td>
-            <td><button class="remove-row" type="button" aria-label="Remove test case ${index + 1}" title="Remove">×</button></td>`;
-          $$('[data-key]', row).forEach(input => {
-            input.value = item[input.dataset.key] || '';
-            input.addEventListener('input', () => { cases[index][input.dataset.key] = input.value; saveWorkspace(); });
-          });
-          $('.remove-row', row).addEventListener('click', () => { cases.splice(index, 1); renderCases(); saveWorkspace(); });
-          body.appendChild(row);
-        });
-        $('#emptyNote').hidden = cases.length > 0;
-        $('#caseCount').textContent = `${cases.length} ${cases.length === 1 ? 'case' : 'cases'}`;
-      }
-      function addCase(focus = true) {
-        cases.push({ scenario: '', steps: '', expected: '', priority: 'High' });
-        renderCases(); saveWorkspace();
-        if (focus) $$('[data-key="scenario"]')[cases.length - 1]?.focus();
-      }
-      $('#addCase').addEventListener('click', () => addCase());
       $('#clearCases').addEventListener('click', () => {
-        if (cases.length && !confirm('Clear all test cases and notes?')) return;
-        cases = []; $('#testerName').value = ''; $('#riskNotes').value = ''; $('#automationNotes').value = ''; renderCases(); saveWorkspace();
+        if (!confirm('Clear your notes?')) return;
+        $('#testerName').value = ''; $('#riskNotes').value = ''; $('#automationNotes').value = ''; saveWorkspace();
       });
       ['testerName', 'riskNotes', 'automationNotes'].forEach(id => $(`#${id}`).addEventListener('input', saveWorkspace));
       $('#exportCases').addEventListener('click', () => {
-        const header = ['No.', 'Test scenario', 'Steps / test data', 'Expected result', 'Priority'];
-        const rows = cases.map((item, i) => [i + 1, item.scenario, item.steps, item.expected, item.priority]);
-        rows.push([], ['Tester name', $('#testerName').value], ['Risks & assumptions', $('#riskNotes').value], ['Automation approach', $('#automationNotes').value]);
-        const csv = [header, ...rows].map(row => row.map(escapeCsv).join(',')).join('\r\n');
+        const rows = [['Tester name', $('#testerName').value], ['Risks & assumptions', $('#riskNotes').value], ['Automation approach', $('#automationNotes').value]];
+        const csv = rows.map(row => row.map(escapeCsv).join(',')).join('\r\n');
         const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob); link.download = 'qa-money-transfer-test-cases.csv'; link.click();
+        link.href = URL.createObjectURL(blob); link.download = 'qa-money-transfer-notes.csv'; link.click();
         URL.revokeObjectURL(link.href);
-        showToast('CSV exported', 'Your test cases were downloaded.');
+        showToast('CSV exported', 'Your notes were downloaded.');
       });
 
       $('#resetButton').addEventListener('click', () => {
-        if (!confirm('Reset the transfer sandbox and timer? Your test case workspace will be kept.')) return;
+        if (!confirm('Reset the transfer sandbox and timer? Your notes will be kept.')) return;
         balance = 120000; dailyTotal = 0; amountStr = '';
         $('#accountNumber').value = ''; $('#promptpayId').value = ''; $('#bankSelect').value = '';
         $$('.field').forEach(field => field.classList.remove('has-error'));
@@ -757,13 +699,11 @@
       try {
         const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
         if (saved) {
-          cases = Array.isArray(saved.cases) ? saved.cases : [];
           $('#testerName').value = saved.testerName || '';
           $('#riskNotes').value = saved.riskNotes || '';
           $('#automationNotes').value = saved.automationNotes || '';
         }
       } catch (_) {}
-      renderCases();
       saveWorkspace();
       updateBalanceUI();
       updateDailyUI();
