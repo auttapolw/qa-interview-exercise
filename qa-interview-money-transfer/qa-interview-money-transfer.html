@@ -67,6 +67,10 @@
     h1 { margin-bottom: 8px; font: 700 clamp(28px, 4vw, 46px)/1.05 var(--serif); letter-spacing: -.03em; color: var(--deep); }
     .intro-copy { margin: 0; max-width: 720px; color: var(--muted); font-size: 16px; }
 
+    .speak-note { margin-top: 20px; max-width: 640px; display: flex; align-items: flex-start; gap: 14px; padding: 18px 20px; border-radius: 10px; background: var(--accent-soft); border: 1.5px solid var(--accent); }
+    .speak-note .speak-icon { font-size: 26px; line-height: 1; flex: none; }
+    .speak-note strong { display: block; font: 800 18px/1.3 var(--serif); color: var(--deep); margin-bottom: 3px; }
+    .speak-note span { display: block; color: #5a4530; font-size: 14px; line-height: 1.5; }
     .tester-row { margin-top: 18px; max-width: 320px; }
     .tester-row label { display: block; margin-bottom: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
     .tester-row input { width: 100%; }
@@ -286,6 +290,10 @@
       <p class="eyebrow">Interview exercise · 5 minutes</p>
       <h1 id="pageTitle">Money transfer test design</h1>
       <p class="intro-copy">Explore the VASUP Bank money transfer flow, identify risks, and design a thoughtful set of test scenarios. This is a sandbox—no real money moves.</p>
+      <div class="speak-note">
+        <span class="speak-icon" aria-hidden="true">🗣️</span>
+        <div><strong>This is a speaking exercise.</strong><span>Explain your test scenarios out loud to the interviewer as you go — writing them in the workspace below is optional.</span></div>
+      </div>
       <div class="tester-row">
         <label for="testerName">Tester name</label>
         <input id="testerName" type="text" placeholder="Enter your name" autocomplete="name">
