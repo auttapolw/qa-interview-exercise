@@ -223,9 +223,9 @@
 
   <main class="shell">
     <section class="intro" aria-labelledby="pageTitle">
-      <p class="eyebrow">Interview exercise · 10 minutes</p>
+      <p class="eyebrow">Interview exercise · 5 minutes</p>
       <h1 id="pageTitle">Payment gateway test design</h1>
-      <p class="intro-copy">Explore the VASUP Pay checkout widget embedded on a merchant site, identify risks, and document a thoughtful set of test cases. This is a sandbox—no real payment provider is involved.</p>
+      <p class="intro-copy">Explore the VASUP Pay checkout widget embedded on a merchant site, identify risks, and design a thoughtful set of test scenarios. This is a sandbox—no real payment provider is involved.</p>
       <div class="tester-row">
         <label for="testerName">Tester name</label>
         <input id="testerName" type="text" placeholder="Enter your name" autocomplete="name">
@@ -234,7 +234,7 @@
         <div class="timer" id="timerWrap" aria-label="Exercise timer">
           <span class="timer-dot" aria-hidden="true"></span>
           <span class="timer-label">Time remaining</span>
-          <strong id="timerText">10:00</strong>
+          <strong id="timerText">05:00</strong>
         </div>
         <div class="timer-controls">
           <button class="icon-btn" id="timerButton" type="button">Start</button>
@@ -251,11 +251,11 @@
       <div class="brief-split">
         <div class="brief-assignment">
           <h2>Your assignment</h2>
-          <p>You are testing a new payment gateway that accepts Credit Card, QR Code, and Bank Transfer. Use exploratory testing, then record the highest-value functional and non-functional test cases in the workspace below.</p>
+          <p>You are testing a new payment gateway that accepts Credit Card, QR Code, and Bank Transfer. Use exploratory testing to design test scenarios, then talk the interviewer through them out loud — the workspace below is there if you want to jot anything down, but writing is optional.</p>
           <ol>
             <li>Explore all three payment channels, the transaction limit, currency conversion, and the email/refund SLAs.</li>
-            <li>Consider positive, negative, boundary, accessibility, security, and reliability scenarios.</li>
-            <li>Write clear steps and expected results. Prioritize by customer and business risk.</li>
+            <li>Design scenarios that cover happy-path, negative, and edge cases — as many as you can within the time.</li>
+            <li>Talk the interviewer through each scenario out loud: what you'd do, the test data, the expected result, and how you'd prioritize it by risk.</li>
             <li>Be ready to explain what you would automate, what you would not, and why.</li>
           </ol>
         </div>
@@ -375,7 +375,7 @@
 
     <section class="workspace" aria-labelledby="workspaceTitle">
       <div class="workspace-ribbon">
-        <div><h2 id="workspaceTitle">Candidate test case workspace</h2><p>Your notes save automatically in this browser. Export your work before resetting.</p></div>
+        <div><h2 id="workspaceTitle">Candidate test case workspace</h2><p>Optional — talking through your scenarios out loud is enough. Anything you type here saves automatically; export before resetting.</p></div>
         <div class="workspace-actions">
           <button class="btn on-dark" id="addCase" type="button">+ Add test case</button>
           <button class="btn on-dark" id="clearCases" type="button">Clear</button>
@@ -409,7 +409,7 @@
       const $ = (selector, root = document) => root.querySelector(selector);
       const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
       const storageKey = 'qa-payment-gateway-interview-v1';
-      let timerSeconds = 10 * 60;
+      let timerSeconds = 5 * 60;
       let timerId = null;
       let cases = [];
 
@@ -577,7 +577,7 @@
         }
       }
       $('#timerButton').addEventListener('click', () => {
-        if (timerSeconds === 0) timerSeconds = 10 * 60;
+        if (timerSeconds === 0) timerSeconds = 5 * 60;
         if (timerId) {
           clearInterval(timerId); timerId = null; $('#timerButton').textContent = 'Resume'; $('#timerWrap').classList.remove('running');
         } else {
@@ -650,7 +650,7 @@
         setMethod('card');
         $('#eventLog').innerHTML = ''; $('#eventEmpty').hidden = false;
         renderClock(); renderRates();
-        clearInterval(timerId); timerId = null; timerSeconds = 10 * 60; $('#timerButton').textContent = 'Start'; $('#timerWrap').classList.remove('running'); updateTimer();
+        clearInterval(timerId); timerId = null; timerSeconds = 5 * 60; $('#timerButton').textContent = 'Start'; $('#timerWrap').classList.remove('running'); updateTimer();
       });
 
       try {

@@ -239,7 +239,7 @@
 
   <main class="shell">
     <section class="intro" aria-labelledby="pageTitle">
-      <p class="eyebrow">Interview exercise · 10 minutes</p>
+      <p class="eyebrow">Interview exercise · 5 minutes</p>
       <h1 id="pageTitle">Account lookup API test design</h1>
       <p class="intro-copy">A new backend endpoint, <code>GET /account/info</code>, is close to shipping. There's no UI to click through — build requests directly against the parameters below and inspect the simulated JSON response, the same way you would in Postman or with curl. This is a sandbox; no real network call is made.</p>
       <div class="tester-row">
@@ -250,7 +250,7 @@
         <div class="timer" id="timerWrap" aria-label="Exercise timer">
           <span class="timer-dot" aria-hidden="true"></span>
           <span class="timer-label">Time remaining</span>
-          <strong id="timerText">10:00</strong>
+          <strong id="timerText">05:00</strong>
         </div>
         <div class="timer-controls">
           <button class="icon-btn" id="timerButton" type="button">Start</button>
@@ -267,11 +267,11 @@
       <div class="brief-split">
         <div class="brief-assignment">
           <h2>Your assignment</h2>
-          <p>Design test cases for the account lookup endpoint against the parameter table on the right. Use the console below to issue requests and read the simulated responses.</p>
+          <p>Design test scenarios for the account lookup endpoint against the parameter table on the right. Use the console below to issue requests and read the simulated responses, then talk the interviewer through your scenarios out loud — the workspace below is there if you want to jot anything down, but writing is optional.</p>
           <ol>
             <li>Explore every parameter combination: mandatory-only, mandatory + each optional field, and all four together.</li>
-            <li>Cover positive, negative, boundary, accessibility, security, and reliability scenarios.</li>
-            <li>Record clear steps / test data and expected results in the workspace below. Prioritize by risk.</li>
+            <li>Design scenarios that cover happy-path, negative, and edge cases — as many as you can within the time.</li>
+            <li>Talk the interviewer through each scenario out loud: the test data, the expected result, and how you'd prioritize it by risk.</li>
             <li>Be ready to explain what you'd automate at which layer — unit, API/contract, or UI — and why.</li>
           </ol>
         </div>
@@ -415,7 +415,7 @@
       <div class="workspace-tab">// candidate-test-cases.spec <span class="count-badge" id="caseCount">0</span></div>
       <div class="workspace-body">
         <div class="workspace-toolbar">
-          <div><h2 id="workspaceTitle" class="sr-only">Candidate test case workspace</h2><p>Your notes save automatically in this browser. Export your work before resetting.</p></div>
+          <div><h2 id="workspaceTitle" class="sr-only">Candidate test case workspace</h2><p>Optional — talking through your scenarios out loud is enough. Anything you type here saves automatically; export before resetting.</p></div>
           <div class="workspace-actions">
             <button class="btn" id="addCase" type="button">+ Add test case</button>
             <button class="btn" id="clearCases" type="button">Clear</button>
@@ -457,7 +457,7 @@
       const $ = (selector, root = document) => root.querySelector(selector);
       const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
       const storageKey = 'qa-account-info-api-interview-v1';
-      let timerSeconds = 10 * 60;
+      let timerSeconds = 5 * 60;
       let timerId = null;
       let cases = [];
 
@@ -728,7 +728,7 @@
         }
       }
       $('#timerButton').addEventListener('click', () => {
-        if (timerSeconds === 0) timerSeconds = 10 * 60;
+        if (timerSeconds === 0) timerSeconds = 5 * 60;
         if (timerId) {
           clearInterval(timerId); timerId = null; $('#timerButton').textContent = 'Resume'; $('#timerWrap').classList.remove('running');
         } else {
@@ -751,7 +751,7 @@
         $('#timingValue').textContent = '–– ms';
         $('#viewRecordBtn').hidden = true;
         setResponseTab('body');
-        clearInterval(timerId); timerId = null; timerSeconds = 10 * 60; $('#timerButton').textContent = 'Start'; $('#timerWrap').classList.remove('running'); updateTimer();
+        clearInterval(timerId); timerId = null; timerSeconds = 5 * 60; $('#timerButton').textContent = 'Start'; $('#timerWrap').classList.remove('running'); updateTimer();
       });
 
       function saveWorkspace() {
